@@ -5,7 +5,7 @@
 {% block content %}
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="text-pink mb-0">Bài học của khóa: {{ course.name }}</h3>
-    <a href="{{ url_for('admin_unit_new', course_id=course.id) }}" class="btn btn-pink">
+    <a href="{{ url_for('admin.unit_new', course_id=course.id) }}" class="btn btn-pink">
       + Bài học mới
     </a>
   </div>
@@ -41,14 +41,14 @@
               </td>
               <td class="text-end">
                 <a
-                  href="{{ url_for('admin_unit_edit', unit_id=unit.id) }}"
+                  href="{{ url_for('admin.unit_edit', unit_id=unit.id) }}"
                   class="btn btn-sm btn-outline-secondary me-1"
                 >
                   Sửa
                 </a>
                 <form
                   method="post"
-                  action="{{ url_for('admin_unit_delete', unit_id=unit.id) }}"
+                  action="{{ url_for('admin.unit_delete', unit_id=unit.id) }}"
                   class="d-inline"
                   onsubmit="return confirm('Bạn có chắc muốn xóa bài học này?');"
                 >

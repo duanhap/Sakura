@@ -37,7 +37,7 @@
               <div class="card-body">
                 <h5 class="card-title">{{ course.name }}</h5>
                 <p class="card-text small text-muted">{{ course.description }}</p>
-                <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-sm btn-pink">
+                <a href="{{ url_for('course.detail', course_id=course.id) }}" class="btn btn-sm btn-pink">
                   Vào học
                 </a>
               </div>
@@ -57,7 +57,7 @@
           {% set completed = tasks|selectattr('isCompleted')|list|length %}
           {% set progress = (completed * 100 // total) if total else 0 %}
           <a
-            href="{{ url_for('mission_detail', mission_id=mission.id) }}"
+            href="{{ url_for('mission.detail', mission_id=mission.id) }}"
             class="list-group-item list-group-item-action"
           >
             <div class="d-flex w-100 justify-content-between">

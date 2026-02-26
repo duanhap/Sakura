@@ -28,10 +28,10 @@
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             {% if current_user.is_authenticated %}
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('courses') }}">Khóa học</a>
+                <a class="nav-link" href="{{ url_for('course.list') }}">Khóa học</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('missions') }}">Mission</a>
+                <a class="nav-link" href="{{ url_for('mission.list') }}">Mission</a>
               </li>
               {% if is_admin() %}
                 <li class="nav-item dropdown">
@@ -45,9 +45,9 @@
                     Admin
                   </a>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('admin_courses') }}">Khóa học</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('admin_missions') }}">Mission</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.courses') }}">Khóa học</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.missions') }}">Mission</a></li>
                   </ul>
                 </li>
               {% endif %}
@@ -56,7 +56,7 @@
           <ul class="navbar-nav ms-auto">
             {% if current_user.is_authenticated %}
               <li class="nav-item me-2">
-                <a class="nav-link d-flex align-items-center" href="{{ url_for('profile') }}">
+                <a class="nav-link d-flex align-items-center" href="{{ url_for('user.profile') }}">
                   <img
                     src="{{ current_user.avatar_url }}"
                     alt="avatar"
@@ -66,11 +66,11 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="btn btn-outline-pink" href="{{ url_for('logout') }}">Đăng xuất</a>
+                <a class="btn btn-outline-pink" href="{{ url_for('auth.logout') }}">Đăng xuất</a>
               </li>
             {% else %}
               <li class="nav-item">
-                <a class="btn btn-pink" href="{{ url_for('login') }}">Đăng nhập</a>
+                <a class="btn btn-pink" href="{{ url_for('auth.login') }}">Đăng nhập</a>
               </li>
             {% endif %}
           </ul>
