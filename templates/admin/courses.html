@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Khóa học | Sakura{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="text-pink mb-0">Quản lý khóa học</h3>
+    <a href="{{ url_for('admin_course_new') }}" class="btn btn-pink">+ Khóa học mới</a>
+  </div>
+
+  <div class="card sakura-card">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên</th>
+            <th>Mô tả</th>
+            <th>Bài học</th>
+            <th class="text-end">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+            <tr>
+              <td>{{ course.id }}</td>
+              <td>{{ course.name }}</td>
+              <td class="small">{{ course.description }}</td>
+              <td>{{ course.units.count() }}</td>
+              <td class="text-end">
+                <a
+                  href="{{ url_for('admin_units', course_id=course.id) }}"
+                  class="btn btn-sm btn-light me-1"
+                >
+                  Bài học
+                </a>
+                <a
+                  href="{{ url_for('admin_unit_new', course_id=course.id) }}"
+                  class="btn btn-sm btn-outline-pink me-1"
+                >
+                  + Bài học
+                </a>
+                <a
+                  href="{{ url_for('admin_course_edit', course_id=course.id) }}"
+                  class="btn btn-sm btn-outline-secondary me-1"
+                >
+                  Sửa
+                </a>
+                <form
+                  method="post"
+                  action="{{ url_for('admin_course_delete', course_id=course.id) }}"
+                  class="d-inline"
+                  onsubmit="return confirm('Bạn có chắc muốn xóa khóa học này?');"
+                >
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    Xóa
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">Chưa có khóa học nào.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

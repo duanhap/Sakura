@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.name }} | Sakura{% endblock %}
+
+{% block content %}
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card sakura-card h-100">
+        {% if course.image %}
+          <img src="{{ course.image }}" class="card-img-top course-thumb" alt="course" />
+        {% endif %}
+        <div class="card-body">
+          <h3 class="card-title text-pink">{{ course.name }}</h3>
+          <p class="card-text">{{ course.description }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <h4 class="mb-3 text-pink">Danh sách bài học</h4>
+      <div class="list-group sakura-card">
+        {% for unit in units %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="mb-1">{{ unit.name }}</h6>
+                <p class="mb-1 small text-muted">{{ unit.description }}</p>
+                <div class="small">
+                  {% if unit.video %}
+                    <a href="{{ unit.video }}" target="_blank">🎬 Video</a>
+                  {% endif %}
+                  {% if unit.document %}
+                    <span class="ms-2">
+                      <a href="{{ unit.document }}" target="_blank">📄 Tài liệu</a>
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="p-3 text-muted small">
+            Khóa học này chưa có bài học nào.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

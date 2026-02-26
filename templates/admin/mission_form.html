@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Mission mới | Sakura{% endblock %}
+
+{% block content %}
+  <h3 class="mb-3 text-pink">Tạo mission mới</h3>
+  <div class="card sakura-card">
+    <div class="card-body">
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Tên mission</label>
+          <input type="text" name="name" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mô tả</label>
+          <textarea name="description" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Giao cho user</label>
+          <select name="user_id" class="form-select" required>
+            <option value="">-- Chọn user --</option>
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Chọn bài học (tự tạo task cho mỗi bài)</label>
+          <select name="unit_ids" class="form-select" multiple>
+            {% for unit in units %}
+              <option value="{{ unit.id }}">
+                {{ unit.name }} (Khoá: {{ unit.course.name }})
+              </option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Giữ Ctrl (Windows) để chọn nhiều bài học.</div>
+        </div>
+        <button type="submit" class="btn btn-pink">Lưu</button>
+        <a href="{{ url_for('admin_missions') }}" class="btn btn-outline-secondary ms-2">Hủy</a>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Hồ sơ | Sakura{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-4 mb-3">
+      <div
+        class="sakura-hero small mb-3"
+        style="background-image: url('{{ current_user.wallpaper_url }}');"
+      >
+        <div class="sakura-hero-overlay">
+          <div class="d-flex align-items-center">
+            <img
+              src="{{ current_user.avatar_url }}"
+              alt="avatar"
+              class="rounded-circle avatar-lg me-3 border border-3 border-light"
+            />
+            <div>
+              <h4 class="text-white mb-1">{{ current_user.name }}</h4>
+              <p class="text-light mb-0 small">{{ current_user.description or "Chưa có bio." }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="card sakura-card">
+        <div class="card-body">
+          <h4 class="mb-3 text-pink">Cập nhật hồ sơ</h4>
+          <form method="post">
+            <div class="mb-3">
+              <label class="form-label">Tên hiển thị</label>
+              <input
+                type="text"
+                name="name"
+                class="form-control"
+                value="{{ current_user.name }}"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Bio (hỗ trợ emoji)</label>
+              <textarea
+                name="description"
+                class="form-control"
+                rows="3"
+              >{{ current_user.description or "" }}</textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Ảnh đại diện (URL)</label>
+              <input
+                type="url"
+                name="avatar"
+                class="form-control"
+                value="{{ current_user.avatar or '' }}"
+                placeholder="{{ DEFAULT_AVATAR }}"
+              />
+              <div class="form-text">Để trống sẽ dùng avatar mặc định Sakura.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Wallpaper (URL)</label>
+              <input
+                type="url"
+                name="wallpaper"
+                class="form-control"
+                value="{{ current_user.wallpaper or '' }}"
+                placeholder="{{ DEFAULT_WALLPAPER }}"
+              />
+              <div class="form-text">Để trống sẽ dùng wallpaper Sakura mặc định.</div>
+            </div>
+            <button type="submit" class="btn btn-pink">Lưu thay đổi</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

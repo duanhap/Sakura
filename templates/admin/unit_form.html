@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Sửa bài học' if unit else 'Bài học mới' }} | Sakura{% endblock %}
+
+{% block content %}
+  <h3 class="mb-3 text-pink">
+    {{ 'Sửa bài học' if unit else 'Tạo bài học mới' }} cho khóa: {{ course.name }}
+  </h3>
+  <div class="card sakura-card">
+    <div class="card-body">
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Tên bài học</label>
+          <input
+            type="text"
+            name="name"
+            class="form-control"
+            value="{{ unit.name if unit else '' }}"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mô tả</label>
+          <textarea name="description" class="form-control" rows="3">{{ unit.description if unit else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Link video</label>
+          <input
+            type="url"
+            name="video"
+            class="form-control"
+            value="{{ unit.video if unit and unit.video else '' }}"
+          />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Link tài liệu</label>
+          <input
+            type="url"
+            name="document"
+            class="form-control"
+            value="{{ unit.document if unit and unit.document else '' }}"
+          />
+        </div>
+        <button type="submit" class="btn btn-pink">Lưu</button>
+        <a href="{{ url_for('admin_units', course_id=course.id) }}" class="btn btn-outline-secondary ms-2">Hủy</a>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+

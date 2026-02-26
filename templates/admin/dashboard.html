@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard | Sakura{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="text-pink mb-0">Admin Dashboard</h3>
+    <a href="{{ url_for('admin_user_new') }}" class="btn btn-pink btn-sm">+ User mới</a>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card sakura-card text-center">
+        <div class="card-body">
+          <div class="fw-bold text-muted">User</div>
+          <div class="display-6 text-pink">{{ user_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card sakura-card text-center">
+        <div class="card-body">
+          <div class="fw-bold text-muted">Khóa học</div>
+          <div class="display-6 text-pink">{{ course_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card sakura-card text-center">
+        <div class="card-body">
+          <div class="fw-bold text-muted">Mission</div>
+          <div class="display-6 text-pink">{{ mission_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card sakura-card text-center">
+        <div class="card-body">
+          <div class="fw-bold text-muted">Task</div>
+          <div class="display-6 text-pink">{{ task_count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="mb-2 text-pink">Danh sách user</h5>
+  <div class="card sakura-card">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Ngày tạo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr>
+              <td>{{ user.id }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.role }}</td>
+              <td>{{ user.createdAt }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

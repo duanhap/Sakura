@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Sửa khóa học' if course else 'Khóa học mới' }} | Sakura{% endblock %}
+
+{% block content %}
+  <h3 class="mb-3 text-pink">
+    {{ 'Sửa khóa học' if course else 'Tạo khóa học mới' }}
+  </h3>
+  <div class="card sakura-card">
+    <div class="card-body">
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Tên khóa học</label>
+          <input
+            type="text"
+            name="name"
+            class="form-control"
+            value="{{ course.name if course else '' }}"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mô tả</label>
+          <textarea name="description" class="form-control" rows="3" required>{{ course.description if course else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ảnh đại diện (URL)</label>
+          <input
+            type="url"
+            name="image"
+            class="form-control"
+            value="{{ course.image if course and course.image else '' }}"
+          />
+        </div>
+        <button type="submit" class="btn btn-pink">Lưu</button>
+        <a href="{{ url_for('admin_courses') }}" class="btn btn-outline-secondary ms-2">Hủy</a>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+

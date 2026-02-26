@@ -1,0 +1,94 @@
+body.sakura-bg {
+  background: radial-gradient(circle at top left, #ffe6f2 0, #fff 40%, #ffe9f5 100%);
+  min-height: 100vh;
+}
+
+.sakura-navbar {
+  background: #fff;
+}
+
+.text-pink {
+  color: #e75b9d !important;
+}
+
+.btn-pink {
+  background: linear-gradient(135deg, #ff9ac7, #ff6fb1);
+  border: none;
+  color: #fff;
+}
+
+.btn-pink:hover {
+  background: linear-gradient(135deg, #ff6fb1, #ff9ac7);
+  color: #fff;
+}
+
+.btn-outline-pink {
+  border-color: #ff9ac7;
+  color: #e75b9d;
+}
+
+.btn-outline-pink:hover {
+  background: #ff9ac7;
+  color: #fff;
+}
+
+.sakura-card {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 12px 30px rgba(231, 91, 157, 0.12);
+  overflow: hidden;
+}
+
+.sakura-alert {
+  border-radius: 999px;
+}
+
+.sakura-hero {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  min-height: 180px;
+}
+
+.sakura-hero.small {
+  min-height: 140px;
+}
+
+.sakura-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(255, 111, 177, 0.6));
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-end;
+}
+
+.avatar-xs {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+}
+
+.avatar-lg {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+}
+
+.course-thumb {
+  max-height: 160px;
+  object-fit: cover;
+}
+
+.sakura-progress {
+  height: 6px;
+  border-radius: 999px;
+  background-color: #ffe3f2;
+}
+
+.sakura-progress .progress-bar {
+  background: linear-gradient(135deg, #ff9ac7, #ff6fb1);
+}
+

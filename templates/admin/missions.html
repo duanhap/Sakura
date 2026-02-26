@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Mission | Sakura{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="text-pink mb-0">Quản lý mission</h3>
+    <a href="{{ url_for('admin_mission_new') }}" class="btn btn-pink">+ Mission mới</a>
+  </div>
+
+  <div class="card sakura-card">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên</th>
+            <th>User</th>
+            <th>Task</th>
+            <th>Ngày tạo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mission in missions %}
+            <tr>
+              <td>{{ mission.id }}</td>
+              <td>{{ mission.name }}</td>
+              <td>{{ mission.user.name if mission.user else mission.Userid }}</td>
+              <td>{{ mission.tasks.count() }}</td>
+              <td>{{ mission.createdAt }}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">Chưa có mission nào.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

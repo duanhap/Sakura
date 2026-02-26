@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Mission | Sakura{% endblock %}
+
+{% block content %}
+  <h3 class="mb-3 text-pink">Mission của bạn</h3>
+  <div class="list-group sakura-card">
+    {% for mission in missions %}
+      {% set tasks = mission.tasks.all() %}
+      {% set total = tasks|length %}
+      {% set completed = tasks|selectattr('isCompleted')|list|length %}
+      {% set progress = (completed * 100 // total) if total else 0 %}
+      <a
+        href="{{ url_for('mission_detail', mission_id=mission.id) }}"
+        class="list-group-item list-group-item-action"
+      >
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1">{{ mission.name }}</h6>
+          <small>{{ progress }}%</small>
+        </div>
+        <p class="mb-1 small text-muted">{{ mission.description }}</p>
+        <div class="progress sakura-progress">
+          <div
+            class="progress-bar"
+            role="progressbar"
+            style="width: {{ progress }}%;"
+          ></div>
+        </div>
+      </a>
+    {% else %}
+      <div class="p-3 text-muted small">
+        Bạn chưa có mission nào.
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+

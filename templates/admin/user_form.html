@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}User mới | Sakura{% endblock %}
+
+{% block content %}
+  <h3 class="mb-3 text-pink">Tạo tài khoản User</h3>
+  <div class="card sakura-card">
+    <div class="card-body">
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Tên</label>
+          <input type="text" name="name" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" name="password" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Role</label>
+          <select name="role" class="form-select">
+            <option value="USER" selected>User</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ảnh đại diện (URL)</label>
+          <input type="url" name="avatar" class="form-control" placeholder="{{ DEFAULT_AVATAR }}" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Wallpaper (URL)</label>
+          <input type="url" name="wallpaper" class="form-control" placeholder="{{ DEFAULT_WALLPAPER }}" />
+        </div>
+        <button type="submit" class="btn btn-pink">Lưu</button>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary ms-2">Hủy</a>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
