@@ -12,8 +12,16 @@ class UnitRepository:
 
     @staticmethod
     def get_by_course(course_id):
-        """Get units by course ID."""
+        """Get units by course ID as a simple list."""
         return Unit.query.filter_by(Courseid=course_id).order_by(Unit.createdAt.asc()).all()
+
+    @staticmethod
+    def query_by_course(course_id):
+        """Return a query object for units of a given course.
+
+        This is useful when callers want to paginate or further filter.
+        """
+        return Unit.query.filter_by(Courseid=course_id).order_by(Unit.createdAt.asc())
 
     @staticmethod
     def get_all():

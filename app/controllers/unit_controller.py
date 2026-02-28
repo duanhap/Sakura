@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from app.services import UnitService, FlashcardService
+from app.services import UnitService, FlashcardService, SentenceService
 from app.utils import is_admin
 
 unit_bp = Blueprint("unit", __name__, url_prefix="/units")
@@ -109,6 +109,88 @@ def flashcard_import(unit_id):
             flash("Vui lòng chọn một file hợp lệ.", "danger")
             
     return render_template("units/flashcard_import.html", unit=unit)
+
+@unit_bp.route("/<int:unit_id>/sentences/new", methods=["GET", "POST"])
+@login_required
+@admin_required
+def sentence_new(unit_id):
+    """Add a new sentence to a unit."""
+    unit = UnitService.get_unit(unit_id)
+    if not unit:
+        flash("Bài học không tồn tại.", "danger")
+        return redirect(url_for("course.list"))
+        
+    if request.method == "POST":
+        content = request.form.get("content", "").strip()
+        pronunciation = request.form.get("pronunciation", "").strip()
+        meaning = request.form.get("meaning", "").strip()
+        
+        result = SentenceService.create_sentence(unit_id, content, pronunciation, meaning)
+        flash(result["message"], "success" if result["success"] else "danger")
+        if result["success"]:
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+            
+    return render_template("units/sentence_form.html", unit=unit, sentence=None)
+
+@unit_bp.route("/<int:unit_id>/sentences/<int:sentence_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def sentence_edit(unit_id, sentence_id):
+    """Edit a sentence."""
+    unit = UnitService.get_unit(unit_id)
+    sentence = SentenceService.get_sentence(sentence_id)
+    
+    if not unit or not sentence or sentence.UnitId != unit_id:
+        flash("Dữ liệu không hợp lệ.", "danger")
+        return redirect(url_for("unit.detail", unit_id=unit_id))
+        
+    if request.method == "POST":
+        content = request.form.get("content", "").strip()
+        pronunciation = request.form.get("pronunciation", "").strip()
+        meaning = request.form.get("meaning", "").strip()
+        
+        result = SentenceService.update_sentence(sentence_id, content, pronunciation, meaning)
+        flash(result["message"], "success" if result["success"] else "danger")
+        if result["success"]:
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+            
+    return render_template("units/sentence_form.html", unit=unit, sentence=sentence)
+
+@unit_bp.route("/<int:unit_id>/sentences/<int:sentence_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def sentence_delete(unit_id, sentence_id):
+    """Delete a sentence."""
+    result = SentenceService.delete_sentence(sentence_id)
+    flash(result["message"], "info" if result["success"] else "danger")
+    return redirect(url_for("unit.detail", unit_id=unit_id))
+
+@unit_bp.route("/<int:unit_id>/sentences/import", methods=["GET", "POST"])
+@login_required
+@admin_required
+def sentence_import(unit_id):
+    """Import sentences from a file."""
+    unit = UnitService.get_unit(unit_id)
+    if not unit:
+        flash("Bài học không tồn tại.", "danger")
+        return redirect(url_for("course.list"))
+        
+    if request.method == "POST":
+        file = request.files.get("file")
+        if file and file.filename != '':
+            try:
+                # Read text ignoring decode errors, mostly utf-8
+                text_content = file.read().decode('utf-8', errors='ignore')
+                result = SentenceService.process_document(unit_id, text_content)
+                flash(result["message"], "success" if result["success"] else "danger")
+                if result["success"]:
+                    return redirect(url_for("unit.detail", unit_id=unit_id))
+            except Exception as e:
+                flash("Có lỗi xảy ra khi đọc file.", "danger")
+        else:
+            flash("Vui lòng chọn một file hợp lệ.", "danger")
+            
+    return render_template("units/sentence_import.html", unit=unit)
 
 @unit_bp.route("/<int:unit_id>/flashcards/study")
 @login_required

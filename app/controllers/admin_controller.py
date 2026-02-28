@@ -136,15 +136,23 @@ def unit_new(course_id):
 @login_required
 @admin_required
 def units(course_id):
-    """List units of a course."""
+    """List units of a course with optional pagination."""
     from app.services import UnitService
     course = CourseService.get_course(course_id)
     if not course:
         flash("Khóa học không tồn tại.", "danger")
         return redirect(url_for("admin.courses"))
-    
-    units = UnitService.get_units_by_course(course_id)
-    return render_template("admin/units.html", course=course, units=units)
+
+    # allow page parameter for large result sets
+    page = request.args.get("page", 1, type=int)
+    per_page = 20  # could be configurable later
+    pagination = UnitService.get_units_by_course_paginated(course_id, page, per_page)
+    units = pagination.items
+    return render_template(
+        "admin/units.html",
+        course=course,
+        units=pagination,
+    )
 
 
 @admin_bp.route("/units/<int:unit_id>/edit", methods=["GET", "POST"])

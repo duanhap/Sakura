@@ -12,10 +12,40 @@ def dashboard():
     courses = CourseService.get_all_courses()[:6]  # Get first 6 courses
     missions = MissionService.get_user_missions(current_user.id)
     
+    all_users = UserService.get_all_users()
+    user_stats = []
+    for u in all_users:
+        if u.role == "ADMIN":
+            continue
+        completed_tasks = 0
+        completed_missions = 0
+        for m in u.missions.all():
+            tasks = m.tasks.all()
+            if not tasks:
+                continue
+            is_mission_complete = True
+            for t in tasks:
+                if t.isCompleted:
+                    completed_tasks += 1
+                else:
+                    is_mission_complete = False
+            if is_mission_complete:
+                completed_missions += 1
+                
+        user_stats.append({
+            "user": u,
+            "completed_missions": completed_missions,
+            "completed_tasks": completed_tasks
+        })
+        
+    # Sort by completed_missions descending, then completed_tasks descending
+    user_stats.sort(key=lambda x: (x["completed_missions"], x["completed_tasks"]), reverse=True)
+    
     return render_template(
         "user/dashboard.html",
         courses=courses,
         missions=missions,
+        user_stats=user_stats,
     )
 
 

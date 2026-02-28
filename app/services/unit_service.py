@@ -14,6 +14,15 @@ class UnitService:
         """Get all units of a course."""
         return UnitRepository.get_by_course(course_id)
 
+    def get_units_by_course_paginated(course_id, page: int = 1, per_page: int = 20):
+        """Return a pagination object for units in a course.
+
+        ``page`` and ``per_page`` parameters support simple paging in the
+        admin UI when there are many units.
+        """
+        query = UnitRepository.query_by_course(course_id)
+        return query.paginate(page=page, per_page=per_page, error_out=False)
+
     @staticmethod
     def create_unit(name: str, course_id: int, description=None, video=None, document=None) -> dict:
         """Create a new unit."""

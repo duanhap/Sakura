@@ -3,82 +3,154 @@
 {% block title %}Trang chủ | Sakura{% endblock %}
 
 {% block content %}
-  <div
-    class="sakura-hero mb-4"
-    style="background-image: url('{{ current_user.wallpaper_url }}');"
-  >
-    <div class="sakura-hero-overlay">
-      <div class="d-flex align-items-center">
-        <img
-          src="{{ current_user.avatar_url }}"
-          alt="avatar"
-          class="rounded-circle avatar-lg me-3 border border-3 border-light"
-        />
-        <div>
-          <h2 class="text-white mb-1">Xin chào, {{ current_user.name }} 👋</h2>
-          <p class="text-light mb-0">
-            Chúc bạn có một ngày học tập thật vui cùng Sakura Learning.
-          </p>
-        </div>
+<div class="sakura-hero mb-4" style="background-image: url('{{ current_user.wallpaper_url }}');">
+  <div class="sakura-hero-overlay">
+    <div class="d-flex align-items-center">
+      <img src="{{ current_user.avatar_url }}" alt="avatar"
+        class="rounded-circle avatar-lg me-3 border border-3 border-light" />
+      <div>
+        <h2 class="text-white mb-1">Xin chào, {{ current_user.name }} 👋</h2>
+        <p class="text-light mb-0">
+          Chúc bạn có một ngày học tập thật vui cùng Sakura Learning.
+        </p>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="row g-4">
-    <div class="col-md-8">
-      <h4 class="mb-3 text-pink">Khóa học mới nhất</h4>
-      <div class="row g-3">
-        {% for course in courses %}
-          <div class="col-md-6">
-            <div class="card sakura-card h-100">
-              {% if course.image %}
-                <img src="{{ course.image }}" class="card-img-top course-thumb" alt="course" />
-              {% endif %}
-              <div class="card-body">
-                <h5 class="card-title">{{ course.name }}</h5>
-                <p class="card-text small text-muted">{{ course.description }}</p>
-                <a href="{{ url_for('course.detail', course_id=course.id) }}" class="btn btn-sm btn-pink">
-                  Vào học
-                </a>
+<div class="row g-4">
+  <div class="col-md-8">
+    <h4 class="mb-3 text-pink">Khóa học mới nhất</h4>
+    <div class="row g-3">
+      {% for course in courses %}
+      <div class="col-md-6">
+        <div class="card sakura-card h-100">
+          {% if course.image %}
+          <img src="{{ course.image }}" class="card-img-top course-thumb" alt="course" />
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ course.name }}</h5>
+            <p class="card-text small text-muted">{{ course.description }}</p>
+            <a href="{{ url_for('course.detail', course_id=course.id) }}" class="btn btn-sm btn-pink">
+              Vào học
+            </a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted">Chưa có khóa học nào. Hãy quay lại sau nhé.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-md-4">
+    <h4 class="mb-3 text-pink">Mission của bạn</h4>
+    <div class="list-group sakura-card">
+      {% for mission in missions %}
+      {% set tasks = mission.tasks.all() %}
+      {% set total = tasks|length %}
+      {% set completed = tasks|selectattr('isCompleted')|list|length %}
+      {% set progress = (completed * 100 // total) if total else 0 %}
+      <a href="{{ url_for('mission.detail', mission_id=mission.id) }}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1">{{ mission.name }}</h6>
+          <small>{{ progress }}%</small>
+        </div>
+        <div class="progress sakura-progress">
+          <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;"></div>
+        </div>
+      </a>
+      {% else %}
+      <div class="p-3 text-muted small">
+        Bạn chưa có mission nào. Khi Admin giao nhiệm vụ, chúng sẽ xuất hiện ở đây.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="row mt-4 mb-4">
+  <div class="col-12">
+    <h4 class="mb-3 text-pink">
+      Bảng Xếp Hạng Học Viên
+    </h4>
+    <div class="row g-3">
+      {% for item in user_stats %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card sakura-card h-100 border-0 overflow-hidden position-relative shadow-sm"
+          style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'"
+          onmouseout="this.style.transform='translateY(0)'">
+          <div class="position-absolute top-0 start-0 w-100 h-100"
+            style="background-image: url('{{ item.user.wallpaper_url }}'); background-size: cover; background-position: center; z-index: 0;">
+          </div>
+          <div class="position-absolute top-0 start-0 w-100 h-100"
+            style="background-color: rgba(255, 255, 255, 0.85); z-index: 1;"></div>
+
+          <div class="position-relative d-flex flex-column h-100" style="z-index: 2;">
+            <div class="card-body d-flex align-items-center">
+              <div class="position-relative me-3">
+                <img src="{{ item.user.avatar_url }}" alt="avatar" class="rounded-circle shadow-sm"
+                  style="width: 60px; height: 60px; object-fit: cover; border: 2px solid white;" />
+                {% if loop.index == 1 %}
+                <span
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark border border-light"
+                  style="font-size: 0.7rem;">
+                  🥇 #1
+                </span>
+                {% elif loop.index == 2 %}
+                <span
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-light text-dark border border-secondary"
+                  style="font-size: 0.7rem;">
+                  🥈 #2
+                </span>
+                {% elif loop.index == 3 %}
+                <span
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-white border border-light"
+                  style="background-color: #cd7f32; font-size: 0.7rem;">
+                  🥉 #3
+                </span>
+                {% else %}
+                <span
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-light text-secondary border border-light"
+                  style="font-size: 0.7rem;">
+                  #{{ loop.index }}
+                </span>
+                {% endif %}
+              </div>
+              <div class="flex-grow-1" style="min-width: 0;">
+                <h6
+                  class="mb-1 fw-bold text-dark text-truncate {% if item.user.id == current_user.id %}text-pink{% endif %}">
+                  {{ item.user.name }}
+                </h6>
+                <p class="mb-0 small text-muted text-truncate">{{ item.user.description or 'Học viên chăm chỉ' }}</p>
+              </div>
+            </div>
+            <div class="card-footer bg-transparent border-top-0 pt-0 pb-3 mt-auto">
+              <div class="d-flex justify-content-around text-center mt-2 px-2 py-2 rounded"
+                style="background-color: rgba(255,255,255,0.7); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div>
+                  <span class="d-block fw-bold" style="color: #ff6b81; font-size: 1.1rem;">{{ item.completed_missions
+                    }}</span>
+                  <small class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Missions</small>
+                </div>
+                <div>
+                  <span class="d-block fw-bold text-primary" style="font-size: 1.1rem;">{{ item.completed_tasks
+                    }}</span>
+                  <small class="text-muted" style="font-size: 0.7rem; text-transform: uppercase;">Tasks</small>
+                </div>
               </div>
             </div>
           </div>
-        {% else %}
-          <p class="text-muted">Chưa có khóa học nào. Hãy quay lại sau nhé.</p>
-        {% endfor %}
+        </div>
       </div>
-    </div>
-    <div class="col-md-4">
-      <h4 class="mb-3 text-pink">Mission của bạn</h4>
-      <div class="list-group sakura-card">
-        {% for mission in missions %}
-          {% set tasks = mission.tasks.all() %}
-          {% set total = tasks|length %}
-          {% set completed = tasks|selectattr('isCompleted')|list|length %}
-          {% set progress = (completed * 100 // total) if total else 0 %}
-          <a
-            href="{{ url_for('mission.detail', mission_id=mission.id) }}"
-            class="list-group-item list-group-item-action"
-          >
-            <div class="d-flex w-100 justify-content-between">
-              <h6 class="mb-1">{{ mission.name }}</h6>
-              <small>{{ progress }}%</small>
-            </div>
-            <div class="progress sakura-progress">
-              <div
-                class="progress-bar"
-                role="progressbar"
-                style="width: {{ progress }}%;"
-              ></div>
-            </div>
-          </a>
-        {% else %}
-          <div class="p-3 text-muted small">
-            Bạn chưa có mission nào. Khi Admin giao nhiệm vụ, chúng sẽ xuất hiện ở đây.
+      {% else %}
+      <div class="col-12">
+        <div class="card sakura-card">
+          <div class="card-body text-center text-muted py-4">
+            Chưa có dữ liệu học viên
           </div>
-        {% endfor %}
+        </div>
       </div>
+      {% endfor %}
     </div>
   </div>
+</div>
 {% endblock %}
-

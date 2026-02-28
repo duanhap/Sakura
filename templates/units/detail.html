@@ -68,53 +68,128 @@
 
 {% if is_admin() %}
 <div class="mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="text-pink mb-0"><span class="me-2">🛠️</span>Quản lý Từ Vựng (Admin)</h4>
-        <div>
-            <a href="{{ url_for('unit.flashcard_new', unit_id=unit.id) }}" class="btn btn-outline-pink">Thêm từ vựng</a>
-            <a href="{{ url_for('unit.flashcard_import', unit_id=unit.id) }}" class="btn btn-pink ms-2">Nhập từ File</a>
-        </div>
-    </div>
+    <h4 class="text-pink mb-3"><span class="me-2">🛠️</span>Quản lý Nội dung (Admin)</h4>
 
-    <div class="card sakura-card">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Thuật ngữ</th>
-                        <th>Cách đọc</th>
-                        <th>Mô tả</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for card in unit.flashcards %}
-                    <tr>
-                        <td class="fw-bold text-dark">{{ card.term }}</td>
-                        <td class="text-muted">{{ card.pronunciation }}</td>
-                        <td>
-                            <div class="small text-truncate" style="max-width: 300px;">
-                                {{ card.description }}
-                            </div>
-                        </td>
-                        <td>
-                            <a href="{{ url_for('unit.flashcard_edit', unit_id=unit.id, flashcard_id=card.id) }}"
-                                class="btn btn-sm btn-outline-secondary">Sửa</a>
-                            <form method="post"
-                                action="{{ url_for('unit.flashcard_delete', unit_id=unit.id, flashcard_id=card.id) }}"
-                                class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Bạn có chắc muốn xóa thẻ này?');">Xóa</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted p-4">Chưa có từ vựng nào trong bài học này.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Tabs navigation -->
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-flashcards" data-bs-toggle="tab" data-bs-target="#panel-flashcards" type="button" role="tab" aria-controls="panel-flashcards" aria-selected="true">
+                <span class="me-1">📚</span> Từ Vựng
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-sentences" data-bs-toggle="tab" data-bs-target="#panel-sentences" type="button" role="tab" aria-controls="panel-sentences" aria-selected="false">
+                <span class="me-1">💬</span> Câu
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab content -->
+    <div class="tab-content">
+        <!-- Flashcards Tab -->
+        <div class="tab-pane fade show active" id="panel-flashcards" role="tabpanel" aria-labelledby="tab-flashcards">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-dark mb-0">Quản lý Từ Vựng</h5>
+                <div>
+                    <a href="{{ url_for('unit.flashcard_new', unit_id=unit.id) }}" class="btn btn-outline-pink btn-sm">Thêm từ vựng</a>
+                    <a href="{{ url_for('unit.flashcard_import', unit_id=unit.id) }}" class="btn btn-pink btn-sm ms-2">Nhập từ File</a>
+                </div>
+            </div>
+
+            <div class="card sakura-card">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Thuật ngữ</th>
+                                <th>Cách đọc</th>
+                                <th>Mô tả</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for card in unit.flashcards %}
+                            <tr>
+                                <td class="fw-bold text-dark">{{ card.term }}</td>
+                                <td class="text-muted">{{ card.pronunciation }}</td>
+                                <td>
+                                    <div class="small text-truncate" style="max-width: 300px;">
+                                        {{ card.description }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('unit.flashcard_edit', unit_id=unit.id, flashcard_id=card.id) }}"
+                                        class="btn btn-sm btn-outline-secondary">Sửa</a>
+                                    <form method="post"
+                                        action="{{ url_for('unit.flashcard_delete', unit_id=unit.id, flashcard_id=card.id) }}"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Bạn có chắc muốn xóa thẻ này?');">Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted p-4">Chưa có từ vựng nào trong bài học này.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sentences Tab -->
+        <div class="tab-pane fade" id="panel-sentences" role="tabpanel" aria-labelledby="tab-sentences">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-dark mb-0">Quản lý Câu</h5>
+                <div>
+                    <a href="{{ url_for('unit.sentence_new', unit_id=unit.id) }}" class="btn btn-outline-pink btn-sm">Thêm câu</a>
+                    <a href="{{ url_for('unit.sentence_import', unit_id=unit.id) }}" class="btn btn-pink btn-sm ms-2">Nhập từ File</a>
+                </div>
+            </div>
+
+            <div class="card sakura-card">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Câu / Thuật ngữ</th>
+                                <th>Cách đọc</th>
+                                <th>Nghĩa</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sentence in unit.sentences %}
+                            <tr>
+                                <td class="fw-bold text-dark">{{ sentence.content }}</td>
+                                <td class="text-muted">{{ sentence.pronunciation }}</td>
+                                <td>
+                                    <div class="small text-truncate" style="max-width: 300px;">
+                                        {{ sentence.meaning }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('unit.sentence_edit', unit_id=unit.id, sentence_id=sentence.id) }}"
+                                        class="btn btn-sm btn-outline-secondary">Sửa</a>
+                                    <form method="post"
+                                        action="{{ url_for('unit.sentence_delete', unit_id=unit.id, sentence_id=sentence.id) }}"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Bạn có chắc muốn xóa câu này?');">Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted p-4">Chưa có câu nào trong bài học này.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>

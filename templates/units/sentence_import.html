@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Nhập Câu | Sakura{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=unit.Courseid) }}">{{
+                    unit.course.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Nhập Câu</li>
+        </ol>
+    </nav>
+
+    <h3 class="text-pink mb-3">Thêm hàng loạt câu từ tệp</h3>
+
+    <div class="card sakura-card">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">⚠️ Định dạng hỗ trợ</h5>
+                <p class="mb-2">Hệ thống hỗ trợ đọc tệp dạng Text (.txt). Mỗi câu nằm trên 1 dòng. Hãy đảm bảo nội dung
+                    tệp của bạn có dạng chuẩn sau:</p>
+                <pre class="bg-light p-3 border rounded">Thuật ngữ: 你好 (Nǐ hǎo) Nghĩa: Xin chào.
+Thuật ngữ: 很高兴认识你 (Hěn gāoxìng rènshí nǐ) Nghĩa: Rất vui được quen biết bạn.
+Thuật ngữ: 爸爸、妈妈 (Bàba, māma) Nghĩa: Bố, mẹ.
+Thuật ngữ: 哥哥忙 (Gēge máng) Nghĩa: Anh trai bận.
+Thuật ngữ: 弟弟哭 (Dìdi kū) Nghĩa: Em trai khóc.
+                </pre>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="mt-4">
+                <div class="mb-3">
+                    <label for="fileUpload" class="form-label fw-bold">Chọn tệp (.txt)</label>
+                    <input class="form-control form-control-lg" type="file" id="fileUpload" name="file" accept=".txt">
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-pink px-4 py-2">Tiến hành Nhập</button>
+                    <a href="{{ url_for('unit.detail', unit_id=unit.id) }}"
+                        class="btn btn-outline-secondary ms-2 py-2">Hủy quay về</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

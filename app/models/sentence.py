@@ -5,6 +5,7 @@ class Sentence(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String(255), nullable=False)
+    pronunciation = db.Column(db.String(255), nullable=False)
     meaning = db.Column(db.String(255), nullable=False)
 
     UnitId = db.Column(db.Integer, db.ForeignKey("unit.id"), nullable=False)
