@@ -18,6 +18,7 @@
             <th>User</th>
             <th>Task</th>
             <th>Ngày tạo</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -28,10 +29,17 @@
               <td>{{ mission.user.name if mission.user else mission.Userid }}</td>
               <td>{{ mission.tasks.count() }}</td>
               <td>{{ mission.createdAt }}</td>
+              <td>
+                <a href="{{ url_for('admin_mission.detail', mission_id=mission.id) }}" class="btn btn-sm btn-outline-secondary">Chi tiết</a>
+                <a href="{{ url_for('admin_mission.edit', mission_id=mission.id) }}" class="btn btn-sm btn-outline-pink">Sửa</a>
+                <form method="post" action="{{ url_for('admin_mission.delete', mission_id=mission.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xác nhận xóa?');">Xóa</button>
+                </form>
+              </td>
             </tr>
           {% else %}
             <tr>
-              <td colspan="5" class="text-center text-muted">Chưa có mission nào.</td>
+              <td colspan="6" class="text-center text-muted">Chưa có mission nào.</td>
             </tr>
           {% endfor %}
         </tbody>

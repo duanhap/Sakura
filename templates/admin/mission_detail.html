@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Chi tiết mission | Sakura{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="text-pink mb-0">Mission #{{ mission.id }} - {{ mission.name }}</h3>
+  <div>
+    <a href="{{ url_for('admin_mission.edit', mission_id=mission.id) }}" class="btn btn-sm btn-outline-pink">Sửa</a>
+    <form method="post" action="{{ url_for('admin_mission.delete', mission_id=mission.id) }}" class="d-inline">
+      <button type="submit" class="btn btn-sm btn-danger"
+        onclick="return confirm('Xác nhận xóa mission này?');">Xóa</button>
+    </form>
+  </div>
+</div>
+
+<p><strong>Giao cho:</strong> {{ mission.user.name if mission.user else mission.Userid }}</p>
+<p><strong>Mô tả:</strong> {{ mission.description or '(không có)' }}</p>
+
+<h4 class="mt-4">Tasks</h4>
+<div class="card sakura-card mb-3">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Tên</th>
+          <th>Bài học</th>
+          <th>Trạng thái</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.id }}</td>
+          <td>{{ task.name }}</td>
+          <td>
+            {% if task.unit %}
+            <a href="{{ url_for('course.detail', course_id=task.unit.Courseid) }}"
+              class="text-pink text-decoration-none">
+              {{ task.unit.name }}
+            </a>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+          <td>{{ 'Hoàn thành' if task.isCompleted else 'Chưa' }}</td>
+          <td>
+            <a href="{{ url_for('admin_task.edit', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">Sửa</a>
+            <form method="post" action="{{ url_for('admin_task.delete', task_id=task.id) }}" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-danger"
+                onclick="return confirm('Xác nhận xóa task?');">Xóa</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">Chưa có task nào.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h5>Thêm task mới</h5>
+<form method="post" action="{{ url_for('admin_mission.task_new', mission_id=mission.id) }}">
+  <div class="row g-2">
+    <div class="col-md-6">
+      <input type="text" name="name" class="form-control" placeholder="Tên task" required />
+    </div>
+    <div class="col-md-4">
+      <select name="unit_id" class="form-select">
+        <option value="">-- Chọn bài học --</option>
+        {% for unit in units %}
+        <option value="{{ unit.id }}">{{ unit.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-pink w-100">Thêm</button>
+    </div>
+  </div>
+</form>
+
+{% endblock %}

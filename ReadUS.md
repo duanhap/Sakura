@@ -117,11 +117,12 @@ Mission là một tập hợp các nhiệm vụ được giao cho người học
 
 Admin có thể:
 
-Tạo mission
-
-Chọn giao cho toàn bộ người dùng (tag ALL)
-
-Hoặc giao cho người dùng cụ thể
+- Tạo mission
+- Sửa tiêu đề, mô tả, người được giao, ngày bắt đầu/kết thúc
+- Xem chi tiết mission (nội dung, user, danh sách task, tiến độ)
+- Xóa hoặc vô hiệu hoá mission khi không còn cần thiết
+- Giao mission cho toàn bộ người dùng (tag ALL) hoặc user riêng lẻ
+- Theo dõi tiến độ thực hiện theo mission và theo từng người dùng
 
 4.1.6 Quản lý Task
 
@@ -129,11 +130,13 @@ Mỗi mission bao gồm nhiều task.
 
 Admin có thể:
 
-Tạo task
-
-Liên kết task với bài học cụ thể
-
-Mô tả yêu cầu của task
+- Tạo task
+- Liên kết task với bài học cụ thể
+- Mô tả yêu cầu của task
+- Sửa nội dung, deadline, liên kết bài học của task
+- Xóa task hoặc thay đổi trạng thái hoạt động
+- Phân công task cho user cụ thể trong trường hợp riêng biệt
+- Xem danh sách task theo mission và trạng thái hoàn thành
 
 4.1.7 Thống kê hệ thống
 

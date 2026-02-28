@@ -1,40 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}Mission mới | Sakura{% endblock %}
+{% block title %}{% if mission %}Sửa mission{% else %}Mission mới{% endif %} | Sakura{% endblock %}
 
 {% block content %}
-  <h3 class="mb-3 text-pink">Tạo mission mới</h3>
+  <h3 class="mb-3 text-pink">{% if mission %}Sửa mission{% else %}Tạo mission mới{% endif %}</h3>
   <div class="card sakura-card">
     <div class="card-body">
       <form method="post">
         <div class="mb-3">
           <label class="form-label">Tên mission</label>
-          <input type="text" name="name" class="form-control" required />
+          <input type="text" name="name" class="form-control" value="{{ mission.name if mission else '' }}" required />
         </div>
         <div class="mb-3">
           <label class="form-label">Mô tả</label>
-          <textarea name="description" class="form-control" rows="3"></textarea>
+          <textarea name="description" class="form-control" rows="3">{{ mission.description if mission else '' }}</textarea>
         </div>
         <div class="mb-3">
           <label class="form-label">Giao cho user</label>
           <select name="user_id" class="form-select" required>
             <option value="">-- Chọn user --</option>
+            {% if not mission %}
+              <option value="ALL">Tất cả người dùng</option>
+            {% endif %}
             {% for user in users %}
-              <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Chọn bài học (tự tạo task cho mỗi bài)</label>
-          <select name="unit_ids" class="form-select" multiple>
-            {% for unit in units %}
-              <option value="{{ unit.id }}">
-                {{ unit.name }} (Khoá: {{ unit.course.name }})
+              <option value="{{ user.id }}" {% if mission and mission.Userid == user.id %}selected{% endif %}>
+                {{ user.name }} ({{ user.email }})
               </option>
             {% endfor %}
           </select>
-          <div class="form-text">Giữ Ctrl (Windows) để chọn nhiều bài học.</div>
+          {% if mission %}
+            <div class="form-text">Không thể chuyển mission giữa nhiều user; chỉnh sửa gán user chỉ khi cần.</div>
+          {% endif %}
         </div>
+
         <button type="submit" class="btn btn-pink">Lưu</button>
         <a href="{{ url_for('admin.missions') }}" class="btn btn-outline-secondary ms-2">Hủy</a>
       </form>

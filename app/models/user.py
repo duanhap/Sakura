@@ -19,7 +19,7 @@ class User(db.Model, UserMixin):
     createdAt = db.Column(db.Date, nullable=False, default=date.today)
 
     missions = db.relationship("Mission", back_populates="user", lazy="dynamic", cascade="all, delete-orphan")
-
+    flashcard_statuses = db.relationship("FlashcardUser", back_populates="user", lazy="dynamic", cascade="all, delete-orphan")
     @property
     def avatar_url(self) -> str:
         return self.avatar or DEFAULT_AVATAR

@@ -3,69 +3,69 @@
 {% block title %}Bài học {{ course.name }} | Sakura{% endblock %}
 
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="text-pink mb-0">Bài học của khóa: {{ course.name }}</h3>
-    <a href="{{ url_for('admin.unit_new', course_id=course.id) }}" class="btn btn-pink">
-      + Bài học mới
-    </a>
-  </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="text-pink mb-0">Bài học của khóa: {{ course.name }}</h3>
+  <a href="{{ url_for('admin.unit_new', course_id=course.id) }}" class="btn btn-pink">
+    + Bài học mới
+  </a>
+</div>
 
-  <div class="card sakura-card">
-    <div class="table-responsive">
-      <table class="table align-middle mb-0">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tên</th>
-            <th>Mô tả</th>
-            <th>Video</th>
-            <th>Tài liệu</th>
-            <th class="text-end">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for unit in units %}
-            <tr>
-              <td>{{ unit.id }}</td>
-              <td>{{ unit.name }}</td>
-              <td class="small">{{ unit.description }}</td>
-              <td class="small">
-                {% if unit.video %}
-                  <a href="{{ unit.video }}" target="_blank">Xem</a>
-                {% endif %}
-              </td>
-              <td class="small">
-                {% if unit.document %}
-                  <a href="{{ unit.document }}" target="_blank">Mở</a>
-                {% endif %}
-              </td>
-              <td class="text-end">
-                <a
-                  href="{{ url_for('admin.unit_edit', unit_id=unit.id) }}"
-                  class="btn btn-sm btn-outline-secondary me-1"
-                >
-                  Sửa
-                </a>
-                <form
-                  method="post"
-                  action="{{ url_for('admin.unit_delete', unit_id=unit.id) }}"
-                  class="d-inline"
-                  onsubmit="return confirm('Bạn có chắc muốn xóa bài học này?');"
-                >
-                  <button type="submit" class="btn btn-sm btn-outline-danger">
-                    Xóa
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {% else %}
-            <tr>
-              <td colspan="6" class="text-center text-muted">Chưa có bài học nào.</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+<div class="card sakura-card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Tên</th>
+          <th>Mô tả</th>
+          <th>Video</th>
+          <th>Tài liệu</th>
+          <th class="text-end">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for unit in units %}
+        <tr>
+          <td>{{ unit.id }}</td>
+          <td>
+            <a href="{{ url_for('unit.detail', unit_id=unit.id) }}" class="fw-bold text-pink text-decoration-none">
+              {{ unit.name }}
+            </a>
+          </td>
+          <td class="small">{{ unit.description }}</td>
+          <td class="small">
+            {% if unit.video %}
+            <a href="{{ unit.video }}" target="_blank" class="badge-sakura">Xem</a>
+            {% endif %}
+          </td>
+          <td class="small">
+            {% if unit.document %}
+            <a href="{{ unit.document }}" target="_blank" class="badge-sakura">Mở</a>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('unit.detail', unit_id=unit.id) }}" class="btn btn-sm btn-outline-pink me-1"
+              title="Quản lý từ vựng và xem chi tiết bài học">
+              Từ vựng
+            </a>
+            <a href="{{ url_for('admin.unit_edit', unit_id=unit.id) }}" class="btn btn-sm btn-outline-secondary me-1">
+              Sửa
+            </a>
+            <form method="post" action="{{ url_for('admin.unit_delete', unit_id=unit.id) }}" class="d-inline"
+              onsubmit="return confirm('Bạn có chắc muốn xóa bài học này?');">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                Xóa
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted">Chưa có bài học nào.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+</div>
 {% endblock %}
-

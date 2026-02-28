@@ -358,31 +358,146 @@ def admin_mission_new():
         description = request.form.get("description", "").strip() or None
         user_id = request.form.get("user_id")
         unit_ids = request.form.getlist("unit_ids")
+
         if not name or not user_id:
             flash("Tên mission và người dùng không được để trống.", "danger")
         else:
-            mission = Mission(
-                name=name,
-                description=description,
-                Userid=int(user_id),
-            )
-            db.session.add(mission)
-            db.session.flush()
-            for uid in unit_ids:
-                if not uid:
-                    continue
-                task = Task(
-                    name=f"Hoàn thành bài học #{uid}",
-                    isCompleted=False,
-                    Missionid=mission.id,
-                    Unitid=int(uid),
+            # support assigning to all users
+            if user_id == "ALL":
+                all_users = User.query.all()
+                for u in all_users:
+                    mission = Mission(
+                        name=name,
+                        description=description,
+                        Userid=u.id,
+                    )
+                    db.session.add(mission)
+                    db.session.flush()
+                    for uid in unit_ids:
+                        if not uid:
+                            continue
+                        task = Task(
+                            name=f"Hoàn thành bài học #{uid}",
+                            isCompleted=False,
+                            Missionid=mission.id,
+                            Unitid=int(uid),
+                        )
+                        db.session.add(task)
+                db.session.commit()
+            else:
+                mission = Mission(
+                    name=name,
+                    description=description,
+                    Userid=int(user_id),
                 )
-                db.session.add(task)
-            db.session.commit()
+                db.session.add(mission)
+                db.session.flush()
+                for uid in unit_ids:
+                    if not uid:
+                        continue
+                    task = Task(
+                        name=f"Hoàn thành bài học #{uid}",
+                        isCompleted=False,
+                        Missionid=mission.id,
+                        Unitid=int(uid),
+                    )
+                    db.session.add(task)
+                db.session.commit()
             flash("Tạo mission thành công.", "success")
             return redirect(url_for("admin_missions"))
     return render_template("admin/mission_form.html", users=users, units=units)
 
+
+
+# mission edit/delete routes
+@app.route("/admin/missions/<int:mission_id>/edit", methods=["GET", "POST"])
+@login_required
+def admin_mission_edit(mission_id):
+    if not is_admin():
+        flash("Bạn không có quyền truy cập trang này.", "danger")
+        return redirect(url_for("home"))
+    mission = Mission.query.get_or_404(mission_id)
+    users = User.query.all()
+    units = Unit.query.all()
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip() or None
+        user_id = request.form.get("user_id")
+        if not name or not user_id:
+            flash("Tên mission và người dùng không được để trống.", "danger")
+        else:
+            # use service for validation/logic
+            result = MissionService.update_mission(mission_id, name=name, description=description, user_id=(None if user_id == 'ALL' else user_id))
+            flash(result.get("message", ""), "success" if result.get("success") else "danger")
+            if result.get("success"):
+                return redirect(url_for("admin_mission_detail", mission_id=mission_id))
+    return render_template("admin/mission_form.html", mission=mission, users=users, units=units)
+
+@app.route("/admin/missions/<int:mission_id>/delete", methods=["POST"])
+@login_required
+def admin_mission_delete(mission_id):
+    if not is_admin():
+        flash("Bạn không có quyền truy cập trang này.", "danger")
+        return redirect(url_for("home"))
+    result = MissionService.delete_mission(mission_id)
+    flash(result.get("message", ""), "info" if result.get("success") else "danger")
+    return redirect(url_for("admin_missions"))
+
+@app.route("/admin/missions/<int:mission_id>")
+@login_required
+def admin_mission_detail(mission_id):
+    if not is_admin():
+        flash("Bạn không có quyền truy cập trang này.", "danger")
+        return redirect(url_for("home"))
+    mission = Mission.query.get_or_404(mission_id)
+    # load tasks
+    tasks = Task.query.filter_by(Missionid=mission.id).order_by(Task.id.asc()).all()
+    units = Unit.query.all()
+    return render_template("admin/mission_detail.html", mission=mission, tasks=tasks, units=units)
+
+@app.route("/admin/missions/<int:mission_id>/tasks/new", methods=["POST"])
+@login_required
+def admin_task_new(mission_id):
+    if not is_admin():
+        flash("Bạn không có quyền truy cập trang này.", "danger")
+        return redirect(url_for("home"))
+    name = request.form.get("name", "").strip()
+    unit_id = request.form.get("unit_id")
+    result = MissionService.add_task(mission_id, name, unit_id)
+    flash(result.get("message", ""), "success" if result.get("success") else "danger")
+    return redirect(url_for("admin_mission_detail", mission_id=mission_id))
+
+@app.route("/admin/tasks/<int:task_id>/edit", methods=["GET", "POST"])
+@login_required
+def admin_task_edit(task_id):
+    if not is_admin():
+        flash("Bạn không có quyền truy cập trang này.", "danger")
+        return redirect(url_for("home"))
+    task = Task.query.get_or_404(task_id)
+    units = Unit.query.all()
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        unit_id = request.form.get("unit_id")
+        if not name:
+            flash("Tên task không được để trống.", "danger")
+        else:
+            result = MissionService.update_task(task_id, name=name, unit_id=unit_id)
+            flash(result.get("message", ""), "success" if result.get("success") else "danger")
+            if result.get("success"):
+                return redirect(url_for("admin_mission_detail", mission_id=task.Missionid))
+    return render_template("admin/task_form.html", task=task, units=units)
+
+@app.route("/admin/tasks/<int:task_id>/delete", methods=["POST"])
+@login_required
+def admin_task_delete(task_id):
+    if not is_admin():
+        flash("Bạn không có quyền truy cập trang này.", "danger")
+        return redirect(url_for("home"))
+    task = Task.query.get_or_404(task_id)
+    mission_id = task.Missionid
+    result = MissionService.delete_task(task_id)
+    flash(result.get("message", ""), "info" if result.get("success") else "danger")
+    return redirect(url_for("admin_mission_detail", mission_id=mission_id))
 
 @app.route("/admin/users/new", methods=["GET", "POST"])
 @login_required

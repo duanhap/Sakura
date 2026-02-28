@@ -40,15 +40,32 @@ def create_app(config_class=Config):
     # Register blueprints
     from app.controllers.auth_controller import auth_bp
     from app.controllers.admin_controller import admin_bp
+    from app.controllers.admin_mission_controller import admin_mission_bp
+    from app.controllers.admin_task_controller import admin_task_bp
     from app.controllers.user_controller import user_bp
     from app.controllers.course_controller import course_bp
     from app.controllers.mission_controller import mission_bp
+    from app.controllers.unit_controller import unit_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_mission_bp)
+    app.register_blueprint(admin_task_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(course_bp)
     app.register_blueprint(mission_bp)
+    app.register_blueprint(unit_bp)
+
+    # make Unitid column nullable if needed (silent on failure)
+    from sqlalchemy import text
+    try:
+        with app.app_context():
+            db.session.execute(text(
+                "ALTER TABLE task MODIFY COLUMN Unitid INT NULL"
+            ))
+            db.session.commit()
+    except Exception:
+        pass
 
     # root/home route for redirection logic
     @app.route("/")

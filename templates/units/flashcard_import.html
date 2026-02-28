@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Nhập Từ Vựng | Sakura{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=unit.Courseid) }}">{{
+                    unit.course.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Nhập Từ Vựng</li>
+        </ol>
+    </nav>
+
+    <h3 class="text-pink mb-3">Thêm hàng loạt từ vựng từ tệp</h3>
+
+    <div class="card sakura-card">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">⚠️ Định dạng hỗ trợ</h5>
+                <p class="mb-2">Hệ thống hỗ trợ đọc tệp dạng Text (.txt) hoặc tài liệu thuần túy (.doc /.docx có thể cần
+                    copy paste ra .txt trước). Hãy đảm bảo nội dung tệp của bạn có dạng chuẩn sau:</p>
+                <pre class="bg-light p-3 border rounded">1. Thuật ngữ: 你
+Cách đọc: [ nǐ ]
+Mô tả: Gồm bộ NHÂN ĐỨNG (亻)...
+Ví dụ: 你好 (nǐ hǎo): Xin chào.
+Cách nhớ: Bạn là một người (亻) nhỏ nhắn...
+2. Thuật ngữ: 好
+...
+        </pre>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="mt-4">
+                <div class="mb-3">
+                    <label for="fileUpload" class="form-label fw-bold">Chọn tệp (.txt)</label>
+                    <input class="form-control form-control-lg" type="file" id="fileUpload" name="file" accept=".txt">
+                    <div class="form-text mt-2">Ví dụ trong CSDL sẽ được dồn vào chung với phần mô tả để tiện lưu trữ.
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-pink px-4 py-2">Tiến hành Nhập</button>
+                    <a href="{{ url_for('unit.detail', unit_id=unit.id) }}"
+                        class="btn btn-outline-secondary ms-2 py-2">Hủy quay về</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

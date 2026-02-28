@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Ôn từ vựng: {{ unit.name }} | Sakura{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        overflow-x: hidden;
+    }
+
+    .flip-card {
+        perspective: 1000px;
+        height: 400px;
+        width: 100%;
+        cursor: grab;
+        user-select: none;
+    }
+
+    .flip-card:active {
+        cursor: grabbing;
+    }
+
+    .flip-card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        transition: transform 0.6s;
+        transform-style: preserve-3d;
+    }
+
+    .flip-card.flipped .flip-card-inner {
+        transform: rotateX(-180deg);
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        background: white;
+        padding: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .flip-card-front {
+        background: linear-gradient(135deg, #fff 0%, #fff0f6 100%);
+    }
+
+    .flip-card-back {
+        transform: rotateX(-180deg);
+        background: #f8f9fa;
+        overflow-y: auto;
+        justify-content: flex-start;
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    .btn-sound {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: #e83e8c;
+        z-index: 10;
+        transition: transform 0.2s;
+    }
+
+    .btn-sound:hover {
+        transform: scale(1.1);
+    }
+
+    .btn-action {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .term-text {
+        font-size: 5rem;
+        font-weight: 800;
+        color: #343a40;
+    }
+</style>
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=unit.Courseid) }}">{{
+                    unit.course.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Ôn từ vựng</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0 text-pink">Flashcards: {{ unit.name }}</h3>
+
+        <div class="d-flex align-items-center gap-4">
+            <span class="fw-bold fs-5 text-secondary" id="progressCount">0/0</span>
+
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary px-3 dropdown-toggle" type="button" id="settingsDropdown"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    ⚙️ Cài đặt
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="settingsDropdown">
+                    <li>
+                        <h6 class="dropdown-header">Lọc thẻ</h6>
+                    </li>
+                    <li><a class="dropdown-item option-filter active" href="#" data-filter="all">🌟 Tất cả</a></li>
+                    <li><a class="dropdown-item option-filter" href="#" data-filter="chua_thuoc">❌ Chỉ từ chưa thuộc</a>
+                    </li>
+                    <li><a class="dropdown-item option-filter" href="#" data-filter="thuoc">✅ Chỉ từ đã thuộc</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="flashcardContainer" class="col-md-8 col-lg-6 mx-auto position-relative mt-5">
+    <div class="flip-card mb-4" id="flashcardBox">
+        <div class="flip-card-inner">
+            <div class="flip-card-front">
+                <button class="btn-sound" onclick="playSound(event)" title="Phát âm">🔊</button>
+                <div class="term-text" id="fcTerm"></div>
+                <div class="mt-4 text-muted border px-3 py-1 rounded-pill bg-white">Nhấn để lật thẻ</div>
+            </div>
+            <div class="flip-card-back p-4 p-md-5">
+                <h1 class="text-pink fw-bold mb-1" id="fcTermBack"></h1>
+                <h4 class="text-secondary mb-4" id="fcPronunciation"></h4>
+
+                <h5 class="fw-bold text-dark">Mô tả & Ví dụ:</h5>
+                <p id="fcDescription" style="white-space: pre-wrap; font-size: 1.15rem; color: #444; line-height: 1.6;">
+                </p>
+
+                <div id="fcMemoryTipWrapper" style="display: none;"
+                    class="mt-4 p-3 bg-light rounded border-start border-4 border-info">
+                    <h6 class="fw-bold text-info mb-2">💡 Mẹo cách nhớ:</h6>
+                    <p id="fcMemoryTip" style="font-style: italic; margin-bottom: 0;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 gap-md-4 mt-5">
+        <button class="btn btn-light btn-action text-secondary" onclick="prevCard()" title="Quay lại thẻ trước">
+            <span>⬅️</span>
+        </button>
+        <button class="btn btn-outline-danger btn-action bg-white" onclick="markCard('CHUA_THUOC')"
+            title="Đánh dấu CHƯA thuộc">
+            ❌
+        </button>
+        <button class="btn btn-outline-success btn-action bg-white" onclick="markCard('THUOC')"
+            title="Đánh dấu ĐÃ thuộc">
+            ✅
+        </button>
+        <button class="btn btn-light btn-action text-primary" onclick="shuffleCards()"
+            title="Trộn lại flashcards (Từ đầu)">
+            🔀
+        </button>
+    </div>
+
+    <div class="text-center mt-4 text-muted small">
+        Phím tắt: [Trái/Phải] Chuyển thẻ &middot; [Cách/Lên] Lật thẻ &middot; [ S ] Phát âm &middot; [ X ] Chưa thuộc
+        &middot; [ V ] Đã thuộc
+    </div>
+</div>
+
+<div id="emptyState" class="col-md-8 mx-auto text-center py-5 mt-5" style="display: none;">
+    <div style="font-size: 5rem; margin-bottom: 1rem;">📭</div>
+    <h3 class="text-muted fw-bold">Không có thẻ nào phù hợp</h3>
+    <p class="text-secondary fs-5">Hãy thay đổi bộ lọc ở cài đặt hoặc thêm từ vựng cho bài học này.</p>
+    <a href="{{ url_for('unit.detail', unit_id=unit.id) }}" class="btn btn-pink mt-3">Quay về bài học</a>
+</div>
+
+<script>
+    const unitId = {{ unit.id }};
+    const allFlashcards = {{ flashcards| tojson | safe }};
+    let currentCards = [...allFlashcards];
+    let currentIndex = 0;
+    let currentFilter = 'all';
+
+    const cardBox = document.getElementById('flashcardBox');
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let isAnimating = false;
+
+    // --- Drag & Drop logic ---
+    cardBox.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', dragMove);
+    document.addEventListener('mouseup', dragEnd);
+
+    cardBox.addEventListener('touchstart', (e) => {
+        dragStart(e.touches[0]);
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            dragMove(e.touches[0]);
+        }
+    }, { passive: false });
+    document.addEventListener('touchend', dragEnd);
+
+    function dragStart(e) {
+        if (isAnimating) return;
+        if (e.target.closest('.btn-sound')) return;
+        startX = e.clientX;
+        isDragging = true;
+        currentX = startX;
+        cardBox.style.transition = 'none';
+    }
+
+    function dragMove(e) {
+        if (!isDragging) return;
+        currentX = e.clientX;
+        const diffX = currentX - startX;
+
+        const rotate = diffX * 0.05;
+        cardBox.style.transform = `translateX(${diffX}px) rotate(${rotate}deg)`;
+
+        const front = document.querySelector('.flip-card-front');
+        const back = document.querySelector('.flip-card-back');
+        if (diffX < -50) {
+            if (front) front.style.background = 'linear-gradient(135deg, #fff 0%, #ffe3e3 100%)';
+            if (back) back.style.background = 'linear-gradient(135deg, #fff 0%, #ffe3e3 100%)';
+        } else if (diffX > 50) {
+            if (front) front.style.background = 'linear-gradient(135deg, #fff 0%, #e3ffe3 100%)';
+            if (back) back.style.background = 'linear-gradient(135deg, #fff 0%, #e3ffe3 100%)';
+        } else {
+            if (front) front.style.background = 'linear-gradient(135deg, #fff 0%, #fff0f6 100%)';
+            if (back) back.style.background = '#f8f9fa';
+        }
+    }
+
+    function dragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const diffX = currentX - startX;
+        cardBox.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+
+        if (Math.abs(diffX) > 80 && Math.abs(diffX) > 0) {
+            if (diffX > 0) swipeAndMark('THUOC');
+            else swipeAndMark('CHUA_THUOC');
+        } else {
+            cardBox.style.transform = 'translate(0px, 0px) rotate(0deg)';
+            const front = document.querySelector('.flip-card-front');
+            const back = document.querySelector('.flip-card-back');
+            if (front) front.style.background = 'linear-gradient(135deg, #fff 0%, #fff0f6 100%)';
+            if (back) back.style.background = '#f8f9fa';
+
+            if (Math.abs(diffX) < 10) {
+                toggleCard();
+            }
+        }
+    }
+
+    function renderCurrentCard() {
+        const emptyState = document.getElementById('emptyState');
+        const container = document.getElementById('flashcardContainer');
+
+        document.getElementById('progressCount').innerText = currentCards.length > 0 ? `${currentIndex + 1}/${currentCards.length}` : `0/0`;
+
+        if (currentCards.length === 0) {
+            container.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        container.style.display = 'block';
+        emptyState.style.display = 'none';
+
+        // Animate in
+        cardBox.style.transition = 'none';
+        cardBox.classList.remove('flipped');
+        cardBox.style.opacity = '0';
+        cardBox.style.transform = 'translateX(0) rotate(0)';
+
+        const front = document.querySelector('.flip-card-front');
+        const back = document.querySelector('.flip-card-back');
+        if (front) front.style.background = 'linear-gradient(135deg, #fff 0%, #fff0f6 100%)';
+        if (back) back.style.background = '#f8f9fa';
+
+        const c = currentCards[currentIndex];
+        document.getElementById('fcTerm').innerText = c.term || '';
+        document.getElementById('fcTermBack').innerText = c.term || '';
+        document.getElementById('fcPronunciation').innerText = c.pronunciation || '';
+        document.getElementById('fcDescription').innerText = c.description || '';
+
+        if (c.memoryTip) {
+            document.getElementById('fcMemoryTipWrapper').style.display = 'block';
+            document.getElementById('fcMemoryTip').innerText = c.memoryTip;
+        } else {
+            document.getElementById('fcMemoryTipWrapper').style.display = 'none';
+        }
+
+        // Reflow
+        void cardBox.offsetWidth;
+
+        cardBox.style.transition = 'opacity 0.3s ease-in, transform 0.3s ease-out';
+        cardBox.style.opacity = '1';
+    }
+
+    function toggleCard() {
+        if (isAnimating) return;
+        cardBox.classList.toggle('flipped');
+    }
+
+    function nextCard() {
+        if (currentIndex < currentCards.length - 1) {
+            currentIndex++;
+        } else {
+            currentIndex = 0;
+        }
+        renderCurrentCard();
+    }
+
+    function prevCard() {
+        if (isAnimating) return;
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderCurrentCard();
+        }
+    }
+
+    function playSound(e) {
+        if (e) e.stopPropagation();
+        if (currentCards.length === 0) return;
+        const term = currentCards[currentIndex].term;
+
+        const utterance = new SpeechSynthesisUtterance(term);
+        utterance.lang = 'zh-CN';
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function swipeAndMark(status) {
+        if (isAnimating || currentCards.length === 0) return;
+        isAnimating = true;
+
+        cardBox.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+
+        if (status === 'THUOC') {
+            cardBox.style.transform = 'translateX(100%) rotate(15deg)';
+            const front = document.querySelector('.flip-card-front');
+            const back = document.querySelector('.flip-card-back');
+            if (front) front.style.background = 'linear-gradient(135deg, #fff 0%, #e3ffe3 100%)';
+            if (back) back.style.background = 'linear-gradient(135deg, #fff 0%, #e3ffe3 100%)';
+        } else {
+            cardBox.style.transform = 'translateX(-100%) rotate(-15deg)';
+            const front = document.querySelector('.flip-card-front');
+            const back = document.querySelector('.flip-card-back');
+            if (front) front.style.background = 'linear-gradient(135deg, #fff 0%, #ffe3e3 100%)';
+            if (back) back.style.background = 'linear-gradient(135deg, #fff 0%, #ffe3e3 100%)';
+        }
+        cardBox.style.opacity = '0';
+
+        setTimeout(() => {
+            performMark(status);
+            isAnimating = false;
+        }, 400);
+    }
+
+    function performMark(status) {
+        if (currentCards.length === 0) return;
+        const c = currentCards[currentIndex];
+
+        c.status = status;
+        const orig = allFlashcards.find(x => x.id === c.id);
+        if (orig) orig.status = status;
+
+        fetch(`/units/${unitId}/flashcards/${c.id}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: status })
+        }).catch(err => console.error(err));
+
+        nextCard();
+    }
+
+    function markCard(status) {
+        swipeAndMark(status);
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function shuffleCards() {
+        if (isAnimating) return;
+        shuffle(currentCards);
+        currentIndex = 0;
+        renderCurrentCard();
+    }
+
+    document.querySelectorAll('.option-filter').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            document.querySelectorAll('.option-filter').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.getAttribute('data-filter');
+            currentFilter = filter;
+
+            if (filter === 'all') {
+                currentCards = [...allFlashcards];
+            } else if (filter === 'chua_thuoc') {
+                currentCards = allFlashcards.filter(c => c.status === 'CHUA_THUOC');
+            } else if (filter === 'thuoc') {
+                currentCards = allFlashcards.filter(c => c.status === 'THUOC');
+            }
+
+            if (isAnimating) return;
+            currentIndex = 0;
+            renderCurrentCard();
+        });
+    });
+
+    renderCurrentCard();
+
+    // Keybindings
+    document.addEventListener('keydown', function (event) {
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+        if (currentCards.length === 0) return;
+
+        if (event.code === 'Space' || event.code === 'ArrowUp' || event.code === 'ArrowDown') {
+            event.preventDefault();
+            toggleCard();
+        } else if (event.code === 'ArrowRight') {
+            nextCard();
+        } else if (event.code === 'ArrowLeft') {
+            prevCard();
+        } else if (event.code === 'KeyV' || event.code === 'Enter') {
+            swipeAndMark('THUOC');
+        } else if (event.code === 'KeyX' || event.code === 'Backspace') {
+            swipeAndMark('CHUA_THUOC');
+        } else if (event.code === 'KeyS') {
+            playSound();
+        }
+    });
+</script>
+{% endblock %}

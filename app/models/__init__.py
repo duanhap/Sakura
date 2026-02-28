@@ -3,5 +3,8 @@ from app.models.course import Course
 from app.models.unit import Unit
 from app.models.mission import Mission
 from app.models.task import Task
+from app.models.flashcard import Flashcard
+from app.models.flashcard_user import FlashcardUser
+from app.models.sentence import Sentence
 
-__all__ = ["User", "Course", "Unit", "Mission", "Task"]
+__all__ = ["User", "Course", "Unit", "Mission", "Task", "Flashcard", "FlashcardUser", "Sentence"]

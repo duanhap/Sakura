@@ -1,5 +1,6 @@
 conection.md
-HSK.ddl
 README.md
+__pycache__
+.pytest_cache
 test.py
-requirements.txt
+HSK.ddl

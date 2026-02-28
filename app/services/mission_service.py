@@ -20,28 +20,48 @@ class MissionService:
         return MissionRepository.get_all()
 
     @staticmethod
-    def create_mission(name: str, user_id: int, unit_ids: list, description=None) -> dict:
-        """Create a new mission with tasks."""
+    def create_mission(name: str, user_id, unit_ids: list, description=None) -> dict:
+        """Create a new mission with tasks for one or more users.
+
+        ``user_id`` may be an integer, list of integers, or the string "ALL" to
+        assign to every user in the system.  When multiple users are passed a
+        separate mission row will be created for each.  The return value will
+        include either a single mission object or a list of missions.
+        """
         if not name or not user_id:
             return {"success": False, "message": "Tên mission và người dùng không được để trống."}
         
-        mission = MissionRepository.create(
-            name=name.strip(),
-            user_id=user_id,
-            description=description.strip() if description else None,
-        )
-        
-        # Create tasks for each unit
-        for unit_id in unit_ids:
-            if unit_id:
-                TaskRepository.create(
-                    name=f"Hoàn thành bài học #{unit_id}",
-                    mission_id=mission.id,
-                    unit_id=int(unit_id),
-                    is_completed=False,
-                )
-        
-        return {"success": True, "message": "Tạo mission thành công.", "mission": mission}
+        missions_created = []
+        user_ids = []
+        # resolve user_id variants
+        if user_id == "ALL":
+            from app.models import User
+            user_ids = [u.id for u in User.query.all()]
+        elif isinstance(user_id, list):
+            user_ids = [int(u) for u in user_id if u]
+        else:
+            user_ids = [int(user_id)]
+
+        from app.models import User
+        for uid in user_ids:
+            mission = MissionRepository.create(
+                name=name.strip(),
+                user_id=uid,
+                description=description.strip() if description else None,
+            )
+            # Create tasks for each unit
+            for unit_id in unit_ids:
+                if unit_id:
+                    TaskRepository.create(
+                        name=f"Hoàn thành bài học #{unit_id}",
+                        mission_id=mission.id,
+                        unit_id=int(unit_id),
+                        is_completed=False,
+                    )
+            missions_created.append(mission)
+
+        result = {"success": True, "message": "Tạo mission thành công.", "mission": missions_created[0] if len(missions_created) == 1 else missions_created}
+        return result
 
     @staticmethod
     def delete_mission(mission_id: int):
@@ -87,3 +107,61 @@ class MissionService:
     def get_total_missions():
         """Get total number of missions."""
         return MissionRepository.count()
+
+    @staticmethod
+    def update_mission(mission_id: int, name: str = None, description: str = None, user_id: int = None) -> dict:
+        """Update mission fields."""
+        mission = MissionRepository.get_by_id(mission_id)
+        if not mission:
+            return {"success": False, "message": "Mission không tồn tại."}
+        data = {}
+        if name is not None:
+            data['name'] = name.strip()
+        if description is not None:
+            data['description'] = description.strip()
+        if user_id is not None:
+            data['Userid'] = int(user_id)
+        mission = MissionRepository.update(mission_id, **data)
+        return {"success": True, "message": "Cập nhật mission thành công.", "mission": mission}
+
+    @staticmethod
+    def add_task(mission_id: int, name: str, unit_id: int = None, is_completed: bool = False) -> dict:
+        """Create a new task under a mission."""
+        if not name or not mission_id:
+            return {"success": False, "message": "Tên task và mission không được để trống."}
+        task = TaskRepository.create(
+            name=name.strip(),
+            mission_id=mission_id,
+            unit_id=int(unit_id) if unit_id else None,
+            is_completed=bool(is_completed),
+        )
+        return {"success": True, "message": "Tạo task thành công.", "task": task}
+
+    @staticmethod
+    def update_task(task_id: int, **kwargs) -> dict:
+        """Update task fields like name, unit_id, isCompleted."""
+        task = TaskRepository.get_by_id(task_id)
+        if not task:
+            return {"success": False, "message": "Task không tồn tại."}
+        data = {}
+        if 'name' in kwargs and kwargs['name'] is not None:
+            data['name'] = kwargs['name'].strip()
+        if 'unit_id' in kwargs:
+            # if client sent empty string, clear association
+            if kwargs['unit_id'] == '' or kwargs['unit_id'] is None:
+                data['Unitid'] = None
+            else:
+                data['Unitid'] = int(kwargs['unit_id'])
+        if 'is_completed' in kwargs and kwargs['is_completed'] is not None:
+            data['isCompleted'] = bool(kwargs['is_completed'])
+        task = TaskRepository.update(task_id, **data)
+        return {"success": True, "message": "Cập nhật task thành công.", "task": task}
+
+    @staticmethod
+    def delete_task(task_id: int) -> dict:
+        """Delete a task."""
+        task = TaskRepository.get_by_id(task_id)
+        if task:
+            TaskRepository.delete(task_id)
+            return {"success": True, "message": "Đã xóa task."}
+        return {"success": False, "message": "Task không tồn tại."}

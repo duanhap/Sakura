@@ -28,12 +28,15 @@ class TaskRepository:
     @staticmethod
     def create(name, mission_id, unit_id, is_completed=False):
         """Create a new task."""
-        task = Task(
-            name=name,
-            Missionid=mission_id,
-            Unitid=unit_id,
-            isCompleted=is_completed,
-        )
+        # create without Unitid if not provided to avoid integrity errors
+        kwargs = {
+            'name': name,
+            'Missionid': mission_id,
+            'isCompleted': is_completed,
+        }
+        if unit_id is not None:
+            kwargs['Unitid'] = unit_id
+        task = Task(**kwargs)
         db.session.add(task)
         db.session.commit()
         return task

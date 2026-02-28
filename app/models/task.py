@@ -9,7 +9,7 @@ class Task(db.Model):
     isCompleted = db.Column(db.Boolean, nullable=False, default=False)
 
     Missionid = db.Column(db.Integer, db.ForeignKey("mission.id"), nullable=False)
-    Unitid = db.Column(db.Integer, db.ForeignKey("unit.id"), nullable=False)
+    Unitid = db.Column(db.Integer, db.ForeignKey("unit.id"), nullable=True)
 
     mission = db.relationship("Mission", back_populates="tasks")
     unit = db.relationship("Unit", back_populates="tasks")

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Sửa' if card else 'Thêm' }} Từ Vựng | Sakura{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=unit.Courseid) }}">{{
+                    unit.course.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ 'Sửa' if card else 'Thêm' }} Từ Vựng</li>
+        </ol>
+    </nav>
+
+    <h3 class="text-pink mb-3">{{ 'Sửa từ vựng' if card else 'Thêm từ vựng mới' }}</h3>
+    <div class="card sakura-card">
+        <div class="card-body">
+            <form method="post">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Thuật ngữ <span class="text-danger">*</span></label>
+                        <input type="text" name="term" class="form-control" value="{{ card.term if card else '' }}"
+                            required placeholder="VD: 你" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Cách đọc</label>
+                        <input type="text" name="pronunciation" class="form-control"
+                            value="{{ card.pronunciation if card else '' }}" placeholder="VD: [ nǐ ]" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Mô tả & Ví dụ</label>
+                        <textarea name="description" class="form-control" rows="4"
+                            placeholder="Ý nghĩa và ví dụ...">{{ card.description if card else '' }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Cách nhớ (Memory Tip)</label>
+                        <textarea name="memory_tip" class="form-control" rows="2"
+                            placeholder="Cách ghi nhớ...">{{ card.memoryTip if card else '' }}</textarea>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-pink px-4">Lưu</button>
+                    <a href="{{ url_for('unit.detail', unit_id=unit.id) }}"
+                        class="btn btn-outline-secondary ms-2">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

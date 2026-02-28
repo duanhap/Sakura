@@ -3,48 +3,47 @@
 {% block title %}{{ mission.name }} | Sakura{% endblock %}
 
 {% block content %}
-  <h3 class="mb-1 text-pink">{{ mission.name }}</h3>
-  <p class="text-muted mb-3">{{ mission.description }}</p>
+<h3 class="mb-1 text-pink">{{ mission.name }}</h3>
+<p class="text-muted mb-3">{{ mission.description }}</p>
 
-  <div class="mb-3">
-    <div class="d-flex justify-content-between">
-      <span>Tiến độ</span>
-      <span>{{ progress }}%</span>
+<div class="mb-3">
+  <div class="d-flex justify-content-between">
+    <span>Tiến độ</span>
+    <span>{{ progress }}%</span>
+  </div>
+  <div class="progress sakura-progress">
+    <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;"></div>
+  </div>
+</div>
+
+<div class="list-group sakura-card">
+  {% for task in tasks %}
+  <div class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+      <h6 class="mb-1">{{ task.name }}</h6>
+      {% if task.unit %}
+      <small class="text-muted">
+        Bài học: {{ task.unit.name }}
+      </small>
+      {% endif %}
     </div>
-    <div class="progress sakura-progress">
-      <div
-        class="progress-bar"
-        role="progressbar"
-        style="width: {{ progress }}%;"
-      ></div>
+    <div class="d-flex gap-2">
+      {% if task.unit %}
+      <a href="{{ url_for('unit.detail', unit_id=task.unit.id) }}" class="btn btn-sm btn-outline-secondary">
+        Mở bài học
+      </a>
+      {% endif %}
+      <form method="post" action="{{ url_for('mission.toggle_task', task_id=task.id) }}">
+        <button type="submit" class="btn btn-sm {{ 'btn-success' if task.isCompleted else 'btn-outline-pink' }}">
+          {{ '✓ Hoàn thành' if task.isCompleted else 'Đánh dấu xong' }}
+        </button>
+      </form>
     </div>
   </div>
-
-  <div class="list-group sakura-card">
-    {% for task in tasks %}
-      <div class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-          <h6 class="mb-1">{{ task.name }}</h6>
-          {% if task.unit %}
-            <small class="text-muted">
-              Bài học: {{ task.unit.name }}
-            </small>
-          {% endif %}
-        </div>
-        <form method="post" action="{{ url_for('mission.toggle_task', task_id=task.id) }}">
-          <button
-            type="submit"
-            class="btn btn-sm {{ 'btn-success' if task.isCompleted else 'btn-outline-pink' }}"
-          >
-            {{ '✓ Hoàn thành' if task.isCompleted else 'Đánh dấu xong' }}
-          </button>
-        </form>
-      </div>
-    {% else %}
-      <div class="p-3 text-muted small">
-        Mission này chưa có task nào.
-      </div>
-    {% endfor %}
+  {% else %}
+  <div class="p-3 text-muted small">
+    Mission này chưa có task nào.
   </div>
+  {% endfor %}
+</div>
 {% endblock %}
-

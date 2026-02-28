@@ -204,24 +204,22 @@ def missions():
 @admin_required
 def mission_new():
     """Create new mission."""
-    from app.repositories import UserRepository, UnitRepository
+    from app.repositories import UserRepository
     users = UserRepository.get_all()
-    units = UnitRepository.get_all()
     
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "").strip() or None
         user_id = request.form.get("user_id")
-        unit_ids = request.form.getlist("unit_ids")
         
-        result = MissionService.create_mission(name, int(user_id) if user_id else None, unit_ids, description)
+        result = MissionService.create_mission(name, int(user_id) if user_id else None, [], description)
         if result["success"]:
             flash(result["message"], "success")
             return redirect(url_for("admin.missions"))
         else:
             flash(result["message"], "danger")
     
-    return render_template("admin/mission_form.html", users=users, units=units)
+    return render_template("admin/mission_form.html", users=users)
 
 
 @admin_bp.route("/users/new", methods=["GET", "POST"])
