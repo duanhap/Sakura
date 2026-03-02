@@ -6,7 +6,7 @@ class ResultUnitTest(db.Model):
     __tablename__ = "resultunittest"
 
     id = db.Column(db.Integer, primary_key=True)
-    Userid = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
+    Userid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     Unitid = db.Column(db.Integer, db.ForeignKey("unit.id"), nullable=False)
     completionTime = db.Column(db.Integer, nullable=False) # In seconds
     correctPercentage = db.Column(db.Float, nullable=False)

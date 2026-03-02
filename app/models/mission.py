@@ -10,7 +10,7 @@ class Mission(db.Model):
     createdAt = db.Column(db.Date, nullable=False, default=date.today)
     description = db.Column(db.String(255))
 
-    Userid = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
+    Userid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", back_populates="missions")
 
     tasks = db.relationship("Task", back_populates="mission", lazy="dynamic", cascade="all, delete-orphan")

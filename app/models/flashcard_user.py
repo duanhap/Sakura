@@ -5,7 +5,7 @@ class FlashcardUser(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     FlashcardId = db.Column(db.Integer, db.ForeignKey("flashcard.id"), nullable=False)
-    UserId = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
+    UserId = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     status = db.Column(db.Enum('CHUA_THUOC', 'THUOC'), nullable=False, default='CHUA_THUOC')
 
     flashcard = db.relationship("Flashcard", back_populates="user_status")
