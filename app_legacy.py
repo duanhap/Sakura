@@ -2,9 +2,8 @@ from datetime import date
 import os
 
 from flask import Flask, render_template, redirect, url_for, request, flash
-from flask_sqlalchemy import SQLAlchemy
+from app.extensions import db, login_manager
 from flask_login import (
-    LoginManager,
     login_user,
     logout_user,
     current_user,
@@ -33,8 +32,9 @@ app.config[
 ] = f"mysql://{DB_USER}:{DB_PWD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db = SQLAlchemy(app)
-login_manager = LoginManager(app)
+# Register extensions with this app (use the shared instances)
+db.init_app(app)
+login_manager.init_app(app)
 login_manager.login_view = "auth.login"  # use blueprint endpoint
 
 # Register controllers as blueprints so that we can keep
@@ -154,8 +154,8 @@ def home():
     if not current_user.is_authenticated:
         return redirect(url_for("login"))
     if is_admin():
-        return redirect(url_for("admin_dashboard"))
-    return redirect(url_for("user_dashboard"))
+        return redirect(url_for("admin.dashboard"))
+    return redirect(url_for("user.dashboard"))
 
 
 @app.route("/login", methods=["GET", "POST"])

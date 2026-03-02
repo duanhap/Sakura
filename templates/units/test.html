@@ -1,0 +1,865 @@
+{% extends "base.html" %}
+
+{% block title %}Ôn luyện: {{ unit.name }} | Sakura{% endblock %}
+
+{% block page_activity %}
+<script>window.SAKURA_ACTIVITY = "taking_test";</script>{% endblock %}
+
+{% block content %}
+<style>
+    .sakura-card {
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .question-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .q-dot {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #6c757d;
+    }
+
+    .q-dot.active {
+        border-color: #ff6b9e;
+        background: #ffecf2;
+        color: #ff6b9e;
+    }
+
+    .q-dot.answered {
+        background: #e9ecef;
+        border-color: #ced4da;
+    }
+
+    .timer {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ff6b9e;
+    }
+
+    .char-box {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin: 0.5rem;
+        background: #fff;
+        border: 2px solid #ff6b9e;
+        border-radius: 0.5rem;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        user-select: none;
+    }
+
+    .char-box:hover {
+        transform: translateY(-2px);
+        background: #fff0f6;
+    }
+
+    .char-box.used {
+        opacity: 0.5;
+        pointer-events: none;
+        border-style: dashed;
+        background: #f8f9fa;
+        color: transparent;
+    }
+
+    .answer-area {
+        min-height: 80px;
+        padding: 1rem;
+        border: 2px dashed #ced4da;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        background: #f8f9fa;
+    }
+
+    .speaker-btn {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        font-size: 2.5rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ff6b9e;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 10px rgba(255, 107, 158, 0.3);
+        margin: 0 auto;
+        transition: all 0.2s;
+    }
+
+    .speaker-btn:hover {
+        transform: scale(1.05);
+        background: #f45b8e;
+    }
+
+    .mic-btn {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        font-size: 2.5rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0dcaf0;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 10px rgba(13, 202, 240, 0.3);
+        margin: 0 auto;
+        transition: all 0.2s;
+    }
+
+    .mic-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .mic-btn.recording {
+        animation: pulse-recording 1.5s infinite;
+        background: #dc3545;
+    }
+
+    @keyframes pulse-recording {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        }
+
+        70% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 15px rgba(220, 53, 69, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+    }
+
+    #drawing-canvas {
+        border: 1px solid #ced4da;
+        border-radius: 0.5rem;
+        background: #fff;
+        cursor: crosshair;
+        touch-action: none;
+        width: 100%;
+        height: 300px;
+    }
+
+    .input-group-text.handwriting-btn {
+        cursor: pointer;
+        background-color: #f8f9fa;
+        color: #ff6b9e;
+        transition: all 0.2s;
+    }
+
+    .input-group-text.handwriting-btn:hover {
+        background-color: #ffecf2;
+    }
+</style>
+
+<div class="container py-4" id="test-app">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">Ôn luyện: {{ unit.name }}</h2>
+                    <p class="text-muted mb-0">Hoàn thành bài kiểm tra 15 câu.</p>
+                </div>
+                <div class="text-end">
+                    <div class="timer" id="timer-display">00:00</div>
+                    {% if record %}
+                    <small class="text-success">Kỷ lục: {{ record.score }}% | {{ record.time }}s</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div class="card sakura-card p-4" id="quiz-container">
+                <!-- Navigation -->
+                <div class="question-nav" id="q-nav">
+                    <!-- Dots generated by JS -->
+                </div>
+
+                <!-- Question Display -->
+                <div id="question-display" class="my-4">
+                    <h4 class="mb-4 text-center" id="q-title">CÂU HỎI ?</h4>
+
+                    <div id="q-content" class="text-center">
+                        <!-- Content injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Footer / Controls -->
+                <div class="d-flex justify-content-between mt-5 pt-3 border-top">
+                    <button class="btn btn-outline-secondary" id="btn-prev" onclick="goToPrev()">Trở lại</button>
+                    <button class="btn btn-outline-danger" id="btn-submit" onclick="submitTest()"
+                        style="display: none;">Nộp Bài</button>
+                    <button class="btn btn-pink" id="btn-next" onclick="goToNext()">Tiếp tục</button>
+                </div>
+            </div>
+
+            <!-- Result Container (Hidden implicitly) -->
+            <div class="card sakura-card p-5 text-center" id="result-container" style="display: none;">
+                <h2 class="text-pink mb-4">Kết Quả Bài Kiểm Tra</h2>
+                <div class="display-1 fw-bold text-primary mb-3" id="res-score">0%</div>
+
+                <div class="row justify-content-center mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded shadow-sm">
+                            <h5 class="text-muted mb-2">Thời gian</h5>
+                            <h3 id="res-time">00:00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded shadow-sm">
+                            <h5 class="text-muted mb-2">Trạng thái Kỷ Lục</h5>
+                            <h3 id="res-record" class="text-success">...</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-start mb-4">
+                    <h4>Chi tiết bài làm:</h4>
+                    <div id="res-details" class="accordion mt-3">
+                        <!-- Detail results injected here -->
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-lg btn-outline-primary me-2" onclick="location.reload()">Làm lại</button>
+                    <a href="{{ url_for('unit.detail', unit_id=unit.id) }}" class="btn btn-lg btn-pink">Quay lại Bài
+                        học</a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Handwriting Bottom Offcanvas -->
+        <div class="offcanvas offcanvas-bottom shadow" tabindex="-1" id="handwritingModal"
+            aria-labelledby="handwritingModalLabel" style="height: auto; max-height: 90vh;">
+            <div class="offcanvas-header bg-pink text-white py-2">
+                <h5 class="offcanvas-title fs-5" id="handwritingModalLabel">✏️ Trình Viết Tay</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+                    aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body text-center bg-light p-3">
+                <!-- Suggestion Bar -->
+                <div id="suggestions-bar"
+                    class="d-flex justify-content-center gap-2 flex-wrap mb-3 p-2 bg-white rounded shadow-sm"
+                    style="min-height: 55px;">
+                    <!-- Suggestions appear here -->
+                </div>
+                <!-- Canvas Container -->
+                <div class="position-relative w-100 mb-2">
+                    <canvas id="drawing-canvas"></canvas>
+                    <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                        onclick="clearCanvas()">
+                        🗑️ Xóa viền
+                    </button>
+                </div>
+                <small class="text-muted">Chọn chữ đúng ở thanh gợi ý để điền vào kết quả phía trên.</small>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+
+<script>
+    const questions = {{ questions | tojson | safe }};
+    const unitId = {{ unit.id }};
+    const submitUrl = "{{ url_for('unit.save_test_result', unit_id=unit.id) }}";
+    const courseLang = "{{ unit.course.languageCourse|default('zh') }}";
+
+    const langMap = {
+        'en': 'en-US',
+        'vi': 'vi-VN',
+        'zh': 'zh-CN',
+        'ja': 'ja-JP'
+    };
+    const speechLang = langMap[courseLang] || 'zh-CN';
+
+    let currentIdx = 0;
+    let answers = new Array(questions.length).fill(null);
+    let timeSeconds = 0;
+    let timerInterval = null;
+    let isDrawing = false;
+    let ctx = null;
+    let hwModal = null;
+
+    // Initialization
+    document.addEventListener("DOMContentLoaded", () => {
+        hwModal = new bootstrap.Offcanvas(document.getElementById('handwritingModal'));
+        initNav();
+        startTimer();
+        renderQuestion(0);
+
+        // Setup canvas once globally
+        const canvas = document.getElementById('drawing-canvas');
+        setupCanvas(canvas);
+    });
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeSeconds++;
+            const m = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
+            const s = (timeSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+        }, 1000);
+    }
+
+    function initNav() {
+        const nav = document.getElementById('q-nav');
+        nav.innerHTML = '';
+        questions.forEach((q, idx) => {
+            const dot = document.createElement('div');
+            dot.className = `q-dot ${idx === 0 ? 'active' : ''}`;
+            dot.id = `dot-${idx}`;
+            dot.innerText = idx + 1;
+            dot.onclick = () => {
+                saveCurrentAnswer();
+                renderQuestion(idx);
+            };
+            nav.appendChild(dot);
+        });
+    }
+
+    function updateNavState() {
+        questions.forEach((q, idx) => {
+            const dot = document.getElementById(`dot-${idx}`);
+            dot.className = 'q-dot';
+            if (answers[idx] !== null && answers[idx] !== '') {
+                dot.classList.add('answered');
+            }
+            if (idx === currentIdx) {
+                dot.classList.add('active');
+            }
+        });
+
+        document.getElementById('btn-prev').disabled = currentIdx === 0;
+
+        if (currentIdx === questions.length - 1) {
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-submit').style.display = 'block';
+        } else {
+            document.getElementById('btn-next').style.display = 'block';
+            document.getElementById('btn-submit').style.display = 'none';
+        }
+    }
+
+    function goToNext() {
+        if (currentIdx < questions.length - 1) {
+            saveCurrentAnswer();
+            currentIdx++;
+            renderQuestion(currentIdx);
+        }
+    }
+
+    function goToPrev() {
+        if (currentIdx > 0) {
+            saveCurrentAnswer();
+            currentIdx--;
+            renderQuestion(currentIdx);
+        }
+    }
+
+    function saveCurrentAnswer() {
+        const q = questions[currentIdx];
+        if (q.type === 'listen') {
+            const answerBox = document.getElementById('ans-box');
+            if (answerBox) {
+                const chars = Array.from(answerBox.children).map(c => c.dataset.char);
+                answers[currentIdx] = chars.join('');
+            }
+        } else if (q.type === 'speak') {
+            const inp = document.getElementById('speak-ans');
+            if (inp) answers[currentIdx] = inp.value;
+        } else if (q.type === 'read') {
+            const inp = document.getElementById('read-ans');
+            if (inp) answers[currentIdx] = inp.value;
+        } else if (q.type === 'write') {
+            const inp = document.getElementById('write-ans');
+            if (inp) answers[currentIdx] = inp.value;
+        }
+        updateNavState();
+    }
+
+    function renderQuestion(idx, isReRender = false) {
+        currentIdx = idx;
+        const q = questions[idx];
+
+        const title = document.getElementById('q-title');
+        const contentArea = document.getElementById('q-content');
+        contentArea.innerHTML = '';
+
+        let typeText = "NGHE";
+        if (q.type === 'speak') typeText = "NÓI";
+        else if (q.type === 'read') typeText = "ĐỌC";
+        else if (q.type === 'write') typeText = "VIẾT";
+
+        title.innerHTML = `<span class="badge bg-secondary mb-2">${typeText}</span><br>Câu ${idx + 1}`;
+
+        if (q.type === 'listen') {
+            // Nghe: Nghe audio và chọn từ
+            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghe và sắp xếp các từ theo đúng thứ tự</div>`;
+
+            const btn = document.createElement('button');
+            btn.className = 'speaker-btn mb-4';
+            btn.innerHTML = '🔊';
+            btn.onclick = () => playAudio(q.content);
+            contentArea.appendChild(btn);
+
+            const ansArea = document.createElement('div');
+            ansArea.className = 'answer-area';
+            ansArea.id = 'ans-box';
+            contentArea.appendChild(ansArea);
+
+            const optsArea = document.createElement('div');
+            contentArea.appendChild(optsArea);
+
+            let currentAns = answers[idx] ? answers[idx].split('') : [];
+
+            // Build answer boxes
+            currentAns.forEach((char, i) => {
+                const box = document.createElement('div');
+                box.className = 'char-box';
+                box.dataset.char = char;
+                box.dataset.index = i;
+                box.innerText = char;
+                box.onclick = () => {
+                    playAudio(char);
+                    // remove char
+                    box.remove();
+                    saveCurrentAnswer();
+                    renderQuestion(currentIdx, true); // re-render to restore option
+                };
+                ansArea.appendChild(box);
+            });
+
+            // Build options
+            const availableOptions = [...q.options];
+            currentAns.forEach(c => {
+                const i = availableOptions.indexOf(c);
+                if (i > -1) availableOptions[i] = null;
+            });
+
+            q.options.forEach((char, i) => {
+                const box = document.createElement('div');
+                box.className = 'char-box';
+                box.innerText = char;
+
+                if (currentAns.filter(c => c === char).length >= q.options.filter(c => c === char).length || availableOptions[i] === null) {
+                    box.classList.add('used');
+                } else {
+                    box.onclick = () => {
+                        playAudio(char);
+                        currentAns.push(char);
+                        answers[idx] = currentAns.join('');
+                        renderQuestion(currentIdx, true);
+                    };
+                }
+                optsArea.appendChild(box);
+            });
+
+            // Tự động phát âm thanh khi đến câu này (tuỳ chọn)
+            if (!isReRender) {
+                setTimeout(() => playAudio(q.content), 500);
+            }
+
+        } else if (q.type === 'speak') {
+            // Nói: Cho nghĩa, yêu cầu đọc thuật ngữ
+            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghĩa: <strong>${q.meaning}</strong></div><div class="fs-6 mt-1 mb-3">Hãy đọc to thuật ngữ này!</div>`;
+
+            const ansInput = document.createElement('input');
+            ansInput.type = 'text';
+            ansInput.id = 'speak-ans';
+            ansInput.className = 'form-control text-center fs-3 mb-4 w-75 mx-auto';
+            ansInput.placeholder = 'Kết quả nhận diện giọng nói...';
+            ansInput.readOnly = true;
+            ansInput.value = answers[idx] || '';
+            contentArea.appendChild(ansInput);
+
+            const micBtn = document.createElement('button');
+            micBtn.className = 'mic-btn mb-3';
+            micBtn.innerHTML = '🎤';
+
+            let recognition = null;
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = speechLang;
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onstart = () => {
+                    micBtn.classList.add('recording');
+                };
+                recognition.onresult = (e) => {
+                    const res = e.results[0][0].transcript;
+                    ansInput.value = res.replace(/[.,;!?。，！？、\s]/g, ""); // Dọn dẹp dấu
+                    saveCurrentAnswer();
+                };
+                recognition.onend = () => {
+                    micBtn.classList.remove('recording');
+                };
+                recognition.onerror = () => {
+                    micBtn.classList.remove('recording');
+                    alert("Không nhận diện được giọng nói. Có thể nhập tay.");
+                };
+
+                micBtn.onclick = () => {
+                    if (micBtn.classList.contains('recording')) {
+                        recognition.stop();
+                    } else {
+                        ansInput.value = '';
+                        saveCurrentAnswer();
+                        recognition.start();
+                    }
+                };
+            } else {
+                micBtn.onclick = () => alert("Trình duyệt không hỗ trợ nhận diện giọng nói. Vui lòng nhập bằng bàn phím.");
+            }
+            contentArea.appendChild(micBtn);
+
+        } else if (q.type === 'read') {
+            // Đọc: Cho thuật ngữ, yêu cầu viết nghĩa
+            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Dịch nghĩa thuật ngữ sau:</div><div class="display-3 fw-bold mt-4 mb-2 text-pink">${q.content}</div><div class="fs-5 text-muted mb-4">${q.pronunciation || ''}</div>`;
+
+            const playSoundBtn = document.createElement('button');
+            playSoundBtn.className = 'btn btn-outline-info btn-sm mb-4';
+            playSoundBtn.innerHTML = '🔊 Nghe';
+            playSoundBtn.onclick = () => playAudio(q.content);
+            contentArea.appendChild(playSoundBtn);
+
+            const ansInput = document.createElement('textarea');
+            ansInput.id = 'read-ans';
+            ansInput.rows = 2;
+            ansInput.className = 'form-control text-center fs-4 w-75 mx-auto';
+            ansInput.placeholder = 'Nhập nghĩa tiếng Việt...';
+            ansInput.value = answers[idx] || '';
+            contentArea.appendChild(ansInput);
+
+        } else if (q.type === 'write') {
+            // Viết: Cho nghĩa, yêu cầu viết câu thuật ngữ, hỗ trợ vẽ
+            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghĩa: <strong>${q.meaning}</strong></div><div class="fs-6 mt-1 mb-3">Viết thuật ngữ tương ứng</div>`;
+
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'mb-4 w-75 mx-auto';
+
+            const ansInput = document.createElement('input');
+            ansInput.type = 'text';
+            ansInput.id = 'write-ans';
+            ansInput.className = 'form-control text-center fs-3 mb-3';
+            ansInput.style.height = '60px';
+            ansInput.placeholder = 'Nhập đáp án...';
+            ansInput.value = answers[idx] || '';
+            ansInput.onchange = () => saveCurrentAnswer();
+            ansInput.onkeyup = () => saveCurrentAnswer();
+
+            const btnPen = document.createElement('button');
+            btnPen.className = 'btn btn-outline-pink fs-5 px-4 rounded-pill shadow-sm';
+            btnPen.innerHTML = '✏️ Bảng Vẽ';
+            btnPen.title = 'Mở bảng viết tay';
+            btnPen.onclick = () => {
+                clearCanvas();
+                hwModal.show();
+            };
+
+            inputWrapper.appendChild(ansInput);
+            inputWrapper.appendChild(btnPen);
+            contentArea.appendChild(inputWrapper);
+        }
+
+        updateNavState();
+    }
+
+    function clearCanvas() {
+        const canvas = document.getElementById('drawing-canvas');
+        if (ctx && canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        ink = [];
+        const bar = document.getElementById('suggestions-bar');
+        if (bar) bar.innerHTML = '';
+    }
+
+    let ink = [];
+    let currentStroke = [[], [], []];
+
+    function setupCanvas(canvas) {
+        // init array every time we rebuild canvas
+        ink = [];
+        currentStroke = [[], [], []];
+
+        ctx = canvas.getContext('2d');
+
+        // Cập nhật lại kích thước thực tế dựa trên client width/height vì canvas to trong modal bằng thẻ CSS width 100%
+        // Phải chỉnh lại kích thước nội bộ để vẽ không rạch mờ
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width > 0) {
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#212529';
+            }
+        };
+
+        // offcanvas show event fire
+        document.getElementById('handwritingModal').addEventListener('shown.bs.offcanvas', function () {
+            resizeCanvas();
+            clearCanvas();
+        });
+
+        let painting = false;
+
+        function startPosition(e) {
+            painting = true;
+            currentStroke = [[], [], []];
+            draw(e);
+        }
+
+        function endPosition() {
+            if (!painting) return;
+            painting = false;
+            ctx.beginPath();
+
+            if (currentStroke[0].length > 0) {
+                ink.push([...currentStroke]); // save stroke
+                recognizeHandwriting(ink);
+            }
+        }
+
+        function draw(e) {
+            if (!painting) return;
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            currentStroke[0].push(x);
+            currentStroke[1].push(y);
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mouseup', endPosition);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseleave', endPosition);
+
+        canvas.addEventListener('touchstart', startPosition, { passive: false });
+        canvas.addEventListener('touchend', endPosition);
+        canvas.addEventListener('touchmove', draw, { passive: false });
+    }
+
+    function renderSuggestions(results) {
+        const bar = document.getElementById('suggestions-bar');
+        if (!bar) return;
+        bar.innerHTML = '';
+        results.forEach(char => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-outline-pink shadow-sm char-suggestion';
+            btn.style.fontSize = '1.5rem';
+            btn.innerText = char;
+            btn.onclick = () => {
+                const inp = document.getElementById('write-ans');
+                if (inp) {
+                    inp.value += char;
+                    saveCurrentAnswer();
+                }
+                clearCanvas();
+                hwModal.hide(); // Đóng modal và quay về kết quả
+            };
+            bar.appendChild(btn);
+        });
+    }
+
+    function fallbackSuggestions() {
+        const allChars = new Set();
+        questions.forEach(q => {
+            if (q.content) {
+                for (let char of q.content) {
+                    if (char.trim() && !('.,;!?。，！？、'.includes(char))) {
+                        allChars.add(char);
+                    }
+                }
+            }
+        });
+        const results = Array.from(allChars).sort(() => 0.5 - Math.random()).slice(0, 10);
+        renderSuggestions(results);
+    }
+
+    function recognizeHandwriting(currentInk) {
+        const hwLangMap = {
+            'en': 'en',
+            'vi': 'vi',
+            'zh': 'zh_CN',
+            'ja': 'ja'
+        };
+        const hwLang = hwLangMap[courseLang] || 'zh_CN';
+
+        fetch('/units/handwriting', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ink: currentInk, lang: hwLang })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data[0] === 'SUCCESS' && data[1] && data[1][0]) {
+                    const results = data[1][0][1];
+                    renderSuggestions(results);
+                } else {
+                    fallbackSuggestions();
+                }
+            })
+            .catch(err => {
+                console.error("Lỗi API Viết tay", err);
+                fallbackSuggestions();
+            });
+    }
+
+    function playAudio(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = speechLang;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Trình duyệt không hỗ trợ phát âm.");
+        }
+    }
+
+    function submitTest() {
+        if (!confirm("Bạn có chắc chắn muốn nộp bài? Câu hỏi chưa trả lời sẽ tính là sai.")) return;
+
+        saveCurrentAnswer();
+        clearInterval(timerInterval);
+
+        // Chấm điểm
+        let correctCount = 0;
+        let detailsHtml = '';
+
+        questions.forEach((q, idx) => {
+            const userAns = (answers[idx] || '').trim().toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+            let checkAns = "";
+            let isCorrect = false;
+            let expectedDisplay = "";
+
+            if (q.type === 'listen') {
+                checkAns = q.answer.join('').toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+                expectedDisplay = q.answer.join('');
+            } else if (q.type === 'speak') {
+                checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+                expectedDisplay = q.content;
+            } else if (q.type === 'read') {
+                checkAns = q.meaning.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+                expectedDisplay = q.meaning;
+                // Đối với nghĩa, có thể có sai lệch tiếng Việt, so sánh chuỗi đã loại khoảng trắng/dấu
+                isCorrect = checkAns === userAns || (userAns.length > 2 && checkAns.includes(userAns));
+            } else if (q.type === 'write') {
+                checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+                expectedDisplay = q.content;
+            }
+
+            if (q.type !== 'read') {
+                isCorrect = checkAns === userAns;
+            }
+
+            if (isCorrect) correctCount++;
+
+            let questionText = "";
+            if (q.type === 'listen') questionText = "Nghe và sắp xếp: " + q.meaning;
+            else if (q.type === 'speak') questionText = "Đọc thuật ngữ: " + q.meaning;
+            else if (q.type === 'read') questionText = "Dịch nghĩa: " + q.content;
+            else if (q.type === 'write') questionText = "Viết thuật ngữ: " + q.meaning;
+
+            detailsHtml += `
+            <div class="accordion-item mb-2 border rounded">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${idx}">
+                        Câu ${idx + 1}: ${isCorrect ? '<span class="text-success ms-2">Đúng ✔️</span>' : '<span class="text-danger ms-2">Sai ❌</span>'}
+                    </button>
+                </h2>
+                <div id="collapse${idx}" class="accordion-collapse collapse">
+                    <div class="accordion-body bg-light">
+                        <p class="mb-1 text-muted"><strong>Đề bài:</strong> ${questionText}</p>
+                        <hr class="my-2">
+                        <p class="mb-1"><strong>Bạn trả lời:</strong> <span class="text-primary">${answers[idx] || '<em>Không có trả lời</em>'}</span></p>
+                        <p class="mb-0"><strong>Đáp án đúng:</strong> <span class="text-success">${expectedDisplay}</span></p>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        const scorePercentage = (correctCount / questions.length) * 100;
+
+        // Hiển thị kết quả
+        document.getElementById('quiz-container').style.display = 'none';
+        document.getElementById('result-container').style.display = 'block';
+
+        document.getElementById('res-score').innerText = Math.round(scorePercentage) + '%';
+        const m = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
+        const s = (timeSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('res-time').innerText = `${m}:${s}`;
+        document.getElementById('res-details').innerHTML = detailsHtml;
+
+        // Gửi kết quả lên server
+        fetch(submitUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                score: scorePercentage,
+                time: timeSeconds
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('res-record').innerText = "Đã lưu";
+                }
+            });
+    }
+</script>
+{% endblock %}

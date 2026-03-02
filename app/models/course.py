@@ -6,6 +6,7 @@ class Course(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
+    languageCourse = db.Column(db.String(255), nullable=False, default='zh')
     image = db.Column(db.String(255))
     description = db.Column(db.String(255), nullable=False)
     createdAt = db.Column(db.Date, nullable=False, default=date.today)

@@ -57,10 +57,11 @@ def course_new():
     """Create new course."""
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        languageCourse = request.form.get("languageCourse", "zh").strip()
         description = request.form.get("description", "").strip()
         image = request.form.get("image", "").strip() or None
         
-        result = CourseService.create_course(name, description, image)
+        result = CourseService.create_course(name, languageCourse, description, image)
         if result["success"]:
             flash(result["message"], "success")
             return redirect(url_for("admin.courses"))
@@ -82,10 +83,11 @@ def course_edit(course_id):
     
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        languageCourse = request.form.get("languageCourse", "zh").strip()
         description = request.form.get("description", "").strip()
         image = request.form.get("image", "").strip() or None
         
-        result = CourseService.update_course(course_id, name, description, image)
+        result = CourseService.update_course(course_id, name, languageCourse, description, image)
         if result["success"]:
             flash(result["message"], "success")
             return redirect(url_for("admin.courses"))

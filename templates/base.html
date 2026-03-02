@@ -27,6 +27,11 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('mission.list') }}">Mission</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-1" href="{{ url_for('online.online_page') }}">
+              <span class="status-dot-nav"></span> Online
+            </a>
+          </li>
           {% if is_admin() %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
@@ -101,6 +106,34 @@
       toastList.forEach(toast => toast.show());
     });
   </script>
+
+  {% block page_activity %}{% endblock %}
+
+  {% if current_user.is_authenticated %}
+  <!-- =================== ONLINE HEARTBEAT =================== -->
+  <script>
+    // Nếu trang con không khai báo SAKURA_ACTIVITY, mặc định là browsing
+    if (typeof window.SAKURA_ACTIVITY === "undefined") {
+      window.SAKURA_ACTIVITY = "browsing";
+    }
+
+    function sendHeartbeat() {
+      fetch("/online/heartbeat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activity: window.SAKURA_ACTIVITY }),
+        credentials: "same-origin"
+      }).catch(function () { });
+    }
+
+    sendHeartbeat();
+    setInterval(sendHeartbeat, 30000);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) sendHeartbeat();
+    });
+  </script>
+  <!-- ======================================================= -->
+  {% endif %}
 </body>
 
 </html>

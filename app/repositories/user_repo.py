@@ -1,5 +1,6 @@
 from app.extensions import db
 from app.models import User
+from datetime import datetime, timedelta, timezone
 
 
 class UserRepository:
@@ -60,3 +61,24 @@ class UserRepository:
     def count():
         """Count total users."""
         return User.query.count()
+
+    @staticmethod
+    def get_online_users(minutes=5):
+        """Lấy danh sách user online trong N phút gần nhất."""
+        threshold = datetime.utcnow() - timedelta(minutes=minutes)
+        return (
+            User.query
+            .filter(User.lastSeen >= threshold)
+            .order_by(User.lastSeen.desc())
+            .all()
+        )
+
+    @staticmethod
+    def update_activity(user_id, activity: str):
+        """Cập nhật lastSeen và currentActivity cho user."""
+        user = User.query.get(user_id)
+        if user:
+            user.lastSeen = datetime.utcnow()
+            user.currentActivity = activity
+            db.session.commit()
+        return user

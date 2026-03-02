@@ -66,3 +66,11 @@ FOREIGN KEY (Userid) REFERENCES `User`(id);
 ALTER TABLE ResultUnitTest
 ADD CONSTRAINT FK_Result_Unit
 FOREIGN KEY (Unitid) REFERENCES Unit(id);
+use sakura;
+ALTER TABLE Course
+ADD COLUMN languageCourse VARCHAR(255) NOT NULL AFTER name;
+
+-- Online user tracking
+ALTER TABLE `User`
+ADD COLUMN lastSeen DATETIME NULL,
+ADD COLUMN currentActivity VARCHAR(255) NULL;

@@ -15,20 +15,21 @@ class CourseService:
         return CourseRepository.get_all()
 
     @staticmethod
-    def create_course(name: str, description: str, image=None) -> dict:
+    def create_course(name: str, languageCourse: str, description: str, image=None) -> dict:
         """Create a new course."""
         if not name or not description:
             return {"success": False, "message": "Tên và mô tả khóa học không được để trống."}
         
         course = CourseRepository.create(
             name=name.strip(),
+            languageCourse=languageCourse.strip() if languageCourse else 'zh',
             description=description.strip(),
             image=image.strip() if image else None,
         )
         return {"success": True, "message": "Tạo khóa học thành công.", "course": course}
 
     @staticmethod
-    def update_course(course_id: int, name: str, description: str, image=None) -> dict:
+    def update_course(course_id: int, name: str, languageCourse: str, description: str, image=None) -> dict:
         """Update a course."""
         if not name or not description:
             return {"success": False, "message": "Tên và mô tả khóa học không được để trống."}
@@ -36,6 +37,7 @@ class CourseService:
         course = CourseRepository.update(
             course_id,
             name=name.strip(),
+            languageCourse=languageCourse.strip() if languageCourse else 'zh',
             description=description.strip(),
             image=image.strip() if image else None,
         )

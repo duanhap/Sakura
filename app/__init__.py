@@ -46,6 +46,7 @@ def create_app(config_class=Config):
     from app.controllers.course_controller import course_bp
     from app.controllers.mission_controller import mission_bp
     from app.controllers.unit_controller import unit_bp
+    from app.controllers.online_controller import online_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -55,6 +56,7 @@ def create_app(config_class=Config):
     app.register_blueprint(course_bp)
     app.register_blueprint(mission_bp)
     app.register_blueprint(unit_bp)
+    app.register_blueprint(online_bp)
 
     # make Unitid column nullable if needed (silent on failure)
     from sqlalchemy import text
@@ -66,6 +68,19 @@ def create_app(config_class=Config):
             db.session.commit()
     except Exception:
         pass
+
+    # Add online-tracking columns to User table if not exist (silent on failure)
+    migrations = [
+        "ALTER TABLE `User` ADD COLUMN lastSeen DATETIME NULL",
+        "ALTER TABLE `User` ADD COLUMN currentActivity VARCHAR(255) NULL",
+    ]
+    for sql in migrations:
+        try:
+            with app.app_context():
+                db.session.execute(text(sql))
+                db.session.commit()
+        except Exception:
+            pass
 
     # root/home route for redirection logic
     @app.route("/")

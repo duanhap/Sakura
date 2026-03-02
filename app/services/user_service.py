@@ -33,3 +33,13 @@ class UserService:
     def get_total_users():
         """Get total number of users."""
         return UserRepository.count()
+
+    @staticmethod
+    def get_online_users():
+        """Lấy danh sách user đang online (trong 5 phút gần nhất)."""
+        return UserRepository.get_online_users(minutes=5)
+
+    @staticmethod
+    def update_activity(user_id, activity: str):
+        """Cập nhật trạng thái hoạt động của user."""
+        return UserRepository.update_activity(user_id, activity)

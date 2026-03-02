@@ -2,6 +2,9 @@
 
 {% block title %}Bài học: {{ unit.name }} | Sakura{% endblock %}
 
+{% block page_activity %}
+<script>window.SAKURA_ACTIVITY = "browsing";</script>{% endblock %}
+
 {% block content %}
 <div class="mb-4">
     <nav aria-label="breadcrumb">
@@ -55,11 +58,11 @@
             <div class="mb-3">
                 <span style="font-size: 3rem;">📝</span>
             </div>
-            <h4 class="text-dark fw-bold mb-3">Luyện bài tập</h4>
+            <h4 class="text-dark fw-bold mb-3">Ôn luyện</h4>
             <p class="text-muted mb-4">Làm các bài tập trắc nghiệm và điền từ để củng cố kiến thức ngữ pháp và từ vựng.
             </p>
             <div>
-                <a href="#" class="btn btn-primary px-4 py-2"
+                <a href="{{ url_for('unit.test_study', unit_id=unit.id) }}" class="btn btn-primary px-4 py-2"
                     style="background-color: #5b9de7; border-color: #5b9de7;">Làm bài tập</a>
             </div>
         </div>
@@ -73,12 +76,14 @@
     <!-- Tabs navigation -->
     <ul class="nav nav-tabs mb-3" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-flashcards" data-bs-toggle="tab" data-bs-target="#panel-flashcards" type="button" role="tab" aria-controls="panel-flashcards" aria-selected="true">
+            <button class="nav-link active" id="tab-flashcards" data-bs-toggle="tab" data-bs-target="#panel-flashcards"
+                type="button" role="tab" aria-controls="panel-flashcards" aria-selected="true">
                 <span class="me-1">📚</span> Từ Vựng
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-sentences" data-bs-toggle="tab" data-bs-target="#panel-sentences" type="button" role="tab" aria-controls="panel-sentences" aria-selected="false">
+            <button class="nav-link" id="tab-sentences" data-bs-toggle="tab" data-bs-target="#panel-sentences"
+                type="button" role="tab" aria-controls="panel-sentences" aria-selected="false">
                 <span class="me-1">💬</span> Câu
             </button>
         </li>
@@ -90,9 +95,13 @@
         <div class="tab-pane fade show active" id="panel-flashcards" role="tabpanel" aria-labelledby="tab-flashcards">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="text-dark mb-0">Quản lý Từ Vựng</h5>
-                <div>
-                    <a href="{{ url_for('unit.flashcard_new', unit_id=unit.id) }}" class="btn btn-outline-pink btn-sm">Thêm từ vựng</a>
-                    <a href="{{ url_for('unit.flashcard_import', unit_id=unit.id) }}" class="btn btn-pink btn-sm ms-2">Nhập từ File</a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('unit.flashcard_new', unit_id=unit.id) }}" class="btn btn-outline-pink btn-sm">➕
+                        Thêm từ vựng</a>
+                    <a href="{{ url_for('unit.flashcard_import', unit_id=unit.id) }}" class="btn btn-pink btn-sm">📥
+                        Nhập từ File</a>
+                    <a href="{{ url_for('unit.flashcard_export', unit_id=unit.id) }}"
+                        class="btn btn-outline-success btn-sm">📤 Xuất File</a>
                 </div>
             </div>
 
@@ -130,7 +139,8 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted p-4">Chưa có từ vựng nào trong bài học này.</td>
+                                <td colspan="4" class="text-center text-muted p-4">Chưa có từ vựng nào trong bài học
+                                    này.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -143,9 +153,13 @@
         <div class="tab-pane fade" id="panel-sentences" role="tabpanel" aria-labelledby="tab-sentences">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="text-dark mb-0">Quản lý Câu</h5>
-                <div>
-                    <a href="{{ url_for('unit.sentence_new', unit_id=unit.id) }}" class="btn btn-outline-pink btn-sm">Thêm câu</a>
-                    <a href="{{ url_for('unit.sentence_import', unit_id=unit.id) }}" class="btn btn-pink btn-sm ms-2">Nhập từ File</a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('unit.sentence_new', unit_id=unit.id) }}" class="btn btn-outline-pink btn-sm">➕
+                        Thêm câu</a>
+                    <a href="{{ url_for('unit.sentence_import', unit_id=unit.id) }}" class="btn btn-pink btn-sm">📥 Nhập
+                        từ File</a>
+                    <a href="{{ url_for('unit.sentence_export', unit_id=unit.id) }}"
+                        class="btn btn-outline-success btn-sm">📤 Xuất File</a>
                 </div>
             </div>
 
@@ -183,7 +197,8 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted p-4">Chưa có câu nào trong bài học này.</td>
+                                <td colspan="4" class="text-center text-muted p-4">Chưa có câu nào trong bài học này.
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -195,4 +210,33 @@
 </div>
 {% endif %}
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Khi nhấn link Video -> cập nhật activity thành watching_video
+        document.querySelectorAll('a[href*="video"], a[href*="youtube"], a[href*="youtu.be"], a[href*="vimeo"]').forEach(function (link) {
+            link.addEventListener('click', function () {
+                window.SAKURA_ACTIVITY = "watching_video";
+                fetch("/online/heartbeat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ activity: "watching_video" }),
+                    credentials: "same-origin"
+                });
+            });
+        });
+
+        // Khi nhấn link Tài liệu -> cập nhật activity
+        document.querySelectorAll('a[href*="docs"], a[href*="drive"], a[href*="pdf"], a[href*="doc"]').forEach(function (link) {
+            link.addEventListener('click', function () {
+                window.SAKURA_ACTIVITY = "viewing_document";
+                fetch("/online/heartbeat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ activity: "viewing_document" }),
+                    credentials: "same-origin"
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

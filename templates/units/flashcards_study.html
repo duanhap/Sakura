@@ -2,6 +2,9 @@
 
 {% block title %}Ôn từ vựng: {{ unit.name }} | Sakura{% endblock %}
 
+{% block page_activity %}
+<script>window.SAKURA_ACTIVITY = "studying_flashcard";</script>{% endblock %}
+
 {% block content %}
 <style>
     body {
@@ -197,6 +200,17 @@
 <script>
     const unitId = {{ unit.id }};
     const allFlashcards = {{ flashcards| tojson | safe }};
+    const courseLang = "{{ unit.course.languageCourse|default('zh') }}";
+
+    // Ánh xạ sang speech locale
+    const langMap = {
+        'en': 'en-US',
+        'vi': 'vi-VN',
+        'zh': 'zh-CN',
+        'ja': 'ja-JP'
+    };
+    const speechLang = langMap[courseLang] || 'zh-CN';
+
     let currentCards = [...allFlashcards];
     let currentIndex = 0;
     let currentFilter = 'all';
@@ -351,7 +365,7 @@
         const term = currentCards[currentIndex].term;
 
         const utterance = new SpeechSynthesisUtterance(term);
-        utterance.lang = 'zh-CN';
+        utterance.lang = speechLang;
         window.speechSynthesis.speak(utterance);
     }
 
