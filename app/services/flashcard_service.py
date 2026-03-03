@@ -51,6 +51,11 @@ class FlashcardService:
 
     @staticmethod
     def delete_all_flashcards(unit_id):
+        # Đầu tiên xóa status của các flashcard này của user (FlashcardUser) để tránh lỗi FK
+        FlashcardUser.query.filter(FlashcardUser.FlashcardId.in_(
+            db.session.query(Flashcard.id).filter_by(UnitId=unit_id)
+        )).delete(synchronize_session=False)
+
         Flashcard.query.filter_by(UnitId=unit_id).delete()
         db.session.commit()
         return {"success": True, "message": "Đã xóa toàn bộ từ vựng."}
