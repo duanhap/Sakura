@@ -85,6 +85,15 @@ def flashcard_delete(unit_id, flashcard_id):
     flash(result["message"], "info" if result["success"] else "danger")
     return redirect(url_for("unit.detail", unit_id=unit_id))
 
+@unit_bp.route("/<int:unit_id>/flashcards/delete_all", methods=["POST"])
+@login_required
+@admin_required
+def flashcard_delete_all(unit_id):
+    """Delete all flashcards in a unit."""
+    result = FlashcardService.delete_all_flashcards(unit_id)
+    flash(result["message"], "info" if result["success"] else "danger")
+    return redirect(url_for("unit.detail", unit_id=unit_id))
+
 @unit_bp.route("/<int:unit_id>/flashcards/import", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -164,6 +173,15 @@ def sentence_edit(unit_id, sentence_id):
 def sentence_delete(unit_id, sentence_id):
     """Delete a sentence."""
     result = SentenceService.delete_sentence(sentence_id)
+    flash(result["message"], "info" if result["success"] else "danger")
+    return redirect(url_for("unit.detail", unit_id=unit_id))
+
+@unit_bp.route("/<int:unit_id>/sentences/delete_all", methods=["POST"])
+@login_required
+@admin_required
+def sentence_delete_all(unit_id):
+    """Delete all sentences in a unit."""
+    result = SentenceService.delete_all_sentences(unit_id)
     flash(result["message"], "info" if result["success"] else "danger")
     return redirect(url_for("unit.detail", unit_id=unit_id))
 

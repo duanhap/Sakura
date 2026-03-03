@@ -50,6 +50,12 @@ class FlashcardService:
         return {"success": True, "message": "Xóa từ vựng thành công."}
 
     @staticmethod
+    def delete_all_flashcards(unit_id):
+        Flashcard.query.filter_by(UnitId=unit_id).delete()
+        db.session.commit()
+        return {"success": True, "message": "Đã xóa toàn bộ từ vựng."}
+
+    @staticmethod
     def process_document(unit_id, text_content):
         """
         Parse text document with format:
@@ -77,18 +83,30 @@ class FlashcardService:
             example = ""
             memory_tip = ""
             
+            current_field = None
             for line in lines[1:]:
                 if line.startswith("Cách đọc:"):
                     pronunciation = line.replace("Cách đọc:", "").strip()
+                    current_field = "pronunciation"
                 elif line.startswith("Mô tả:"):
                     description = line.replace("Mô tả:", "").strip()
+                    current_field = "description"
                 elif line.startswith("Ví dụ:"):
                     example = line.replace("Ví dụ:", "").strip()
+                    current_field = "example"
                 elif line.startswith("Cách nhớ:"):
                     memory_tip = line.replace("Cách nhớ:", "").strip()
+                    current_field = "memory_tip"
                 else:
-                    # append to previous current matching area if needed
-                    pass
+                    # Append to current matching area
+                    if current_field == "pronunciation":
+                        pronunciation += "\n" + line
+                    elif current_field == "description":
+                        description += "\n" + line
+                    elif current_field == "example":
+                        example += "\n" + line
+                    elif current_field == "memory_tip":
+                        memory_tip += "\n" + line
             
             if example:
                 description = f"{description}\nVí dụ: {example}"

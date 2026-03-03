@@ -102,6 +102,11 @@
                         Nhập từ File</a>
                     <a href="{{ url_for('unit.flashcard_export', unit_id=unit.id) }}"
                         class="btn btn-outline-success btn-sm">📤 Xuất File</a>
+                    <form method="post" action="{{ url_for('unit.flashcard_delete_all', unit_id=unit.id) }}"
+                        class="d-inline"
+                        onsubmit="return confirm('Bạn có chắc chắn muốn xóa TẤT CẢ từ vựng trong bài này không?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Xóa tất cả</button>
+                    </form>
                 </div>
             </div>
 
@@ -160,6 +165,11 @@
                         từ File</a>
                     <a href="{{ url_for('unit.sentence_export', unit_id=unit.id) }}"
                         class="btn btn-outline-success btn-sm">📤 Xuất File</a>
+                    <form method="post" action="{{ url_for('unit.sentence_delete_all', unit_id=unit.id) }}"
+                        class="d-inline"
+                        onsubmit="return confirm('Bạn có chắc chắn muốn xóa TẤT CẢ câu trong bài này không?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Xóa tất cả</button>
+                    </form>
                 </div>
             </div>
 

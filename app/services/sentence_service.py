@@ -49,6 +49,12 @@ class SentenceService:
         return {"success": True, "message": "Xóa câu thành công."}
 
     @staticmethod
+    def delete_all_sentences(unit_id):
+        Sentence.query.filter_by(UnitId=unit_id).delete()
+        db.session.commit()
+        return {"success": True, "message": "Đã xóa toàn bộ câu."}
+
+    @staticmethod
     def process_document(unit_id, text_content):
         """
         Parse text document with format:
