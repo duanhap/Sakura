@@ -16,14 +16,9 @@ class CourseRepository:
         return Course.query.order_by(Course.createdAt.desc()).all()
 
     @staticmethod
-    def create(name, languageCourse, description, image=None):
+    def create(**kwargs):
         """Create a new course."""
-        course = Course(
-            name=name,
-            languageCourse=languageCourse,
-            description=description,
-            image=image,
-        )
+        course = Course(**kwargs)
         db.session.add(course)
         db.session.commit()
         return course
