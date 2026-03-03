@@ -69,10 +69,11 @@ def create_app(config_class=Config):
     except Exception:
         pass
 
-    # Add online-tracking columns to User table if not exist (silent on failure)
+    # Add online-tracking columns to User table and languageCourse to course table if not exist (silent on failure)
     migrations = [
         "ALTER TABLE `User` ADD COLUMN lastSeen DATETIME NULL",
         "ALTER TABLE `User` ADD COLUMN currentActivity VARCHAR(255) NULL",
+        "ALTER TABLE `course` ADD COLUMN languageCourse VARCHAR(255) DEFAULT 'zh' NOT NULL",
     ]
     for sql in migrations:
         try:

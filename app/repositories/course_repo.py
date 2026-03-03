@@ -16,10 +16,11 @@ class CourseRepository:
         return Course.query.order_by(Course.createdAt.desc()).all()
 
     @staticmethod
-    def create(name, description, image=None):
+    def create(name, languageCourse, description, image=None):
         """Create a new course."""
         course = Course(
             name=name,
+            languageCourse=languageCourse,
             description=description,
             image=image,
         )
