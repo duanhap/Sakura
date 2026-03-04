@@ -62,7 +62,7 @@ class SentenceService:
         """
         lines = text_content.strip().split('\n')
         
-        added = 0
+        sentences_to_add = []
         for line in lines:
             line = line.strip()
             if not line:
@@ -75,7 +75,21 @@ class SentenceService:
                 pronunciation = match.group(2).strip() if match.group(2) else ""
                 meaning = match.group(3).strip()
                 
-                SentenceService.create_sentence(unit_id, content, pronunciation, meaning)
-                added += 1
-                
-        return {"success": True, "message": f"Đã thêm {added} câu từ tệp."}
+                sentences_to_add.append(Sentence(
+                    UnitId=unit_id,
+                    content=content,
+                    pronunciation=pronunciation,
+                    meaning=meaning
+                ))
+        
+        if sentences_to_add:
+            try:
+                db.session.add_all(sentences_to_add)
+                db.session.commit()
+                added = len(sentences_to_add)
+                return {"success": True, "message": f"Đã thêm {added} câu từ tệp."}
+            except Exception as e:
+                db.session.rollback()
+                return {"success": False, "message": f"Lỗi khi lưu dữ liệu: {str(e)}"}
+
+        return {"success": True, "message": "Không tìm thấy câu nào để thêm."}

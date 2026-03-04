@@ -75,7 +75,7 @@ class FlashcardService:
         # Split by number list like "1. Thuật ngữ:" or "1.Thuật ngữ:"
         blocks = re.split(r'\n\s*\d+\.\s*Thuật ngữ:', '\n' + text_content)
         
-        added = 0
+        flashcards_to_add = []
         for block in blocks:
             if not block.strip():
                 continue
@@ -117,10 +117,25 @@ class FlashcardService:
                 description = f"{description}\nVí dụ: {example}"
                 
             if term:
-                FlashcardService.create_flashcard(unit_id, term, pronunciation, description, memory_tip)
-                added += 1
-                
-        return {"success": True, "message": f"Đã thêm {added} từ vựng từ tệp."}
+                flashcards_to_add.append(Flashcard(
+                    UnitId=unit_id,
+                    term=term,
+                    pronunciation=pronunciation,
+                    description=description,
+                    memoryTip=memory_tip
+                ))
+        
+        if flashcards_to_add:
+            try:
+                db.session.add_all(flashcards_to_add)
+                db.session.commit()
+                added = len(flashcards_to_add)
+                return {"success": True, "message": f"Đã thêm {added} từ vựng từ tệp."}
+            except Exception as e:
+                db.session.rollback()
+                return {"success": False, "message": f"Lỗi khi lưu dữ liệu: {str(e)}"}
+        
+        return {"success": True, "message": "Không tìm thấy từ vựng nào để thêm."}
 
     @staticmethod
     def get_flashcards_with_status(unit_id, user_id):
