@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import Flashcard, FlashcardUser
+from app.models import Flashcard, FlashcardUser, UnitProgress
 
 class FlashcardService:
     @staticmethod
@@ -175,3 +175,30 @@ class FlashcardService:
             
         db.session.commit()
         return {"success": True, "status": fu.status}
+
+    @staticmethod
+    def get_unit_progress(unit_id, user_id):
+        """Get the user's progress for a specific unit."""
+        progress = UnitProgress.query.filter_by(UnitId=unit_id, UserId=user_id).first()
+        if progress:
+            return {
+                "lastFlashcardId": progress.lastFlashcardId,
+                "isRandom": progress.isRandom
+            }
+        return {"lastFlashcardId": None, "isRandom": False}
+
+    @staticmethod
+    def update_unit_progress(unit_id, user_id, last_flashcard_id=None, is_random=None):
+        """Update or create unit progress."""
+        progress = UnitProgress.query.filter_by(UnitId=unit_id, UserId=user_id).first()
+        if not progress:
+            progress = UnitProgress(UnitId=unit_id, UserId=user_id)
+            db.session.add(progress)
+        
+        if last_flashcard_id is not None:
+            progress.lastFlashcardId = last_flashcard_id
+        if is_random is not None:
+            progress.isRandom = is_random
+            
+        db.session.commit()
+        return {"success": True}

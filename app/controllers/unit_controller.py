@@ -294,7 +294,8 @@ def flashcards_study(unit_id):
         return redirect(url_for("course.list"))
         
     flashcards = FlashcardService.get_flashcards_with_status(unit_id, current_user.id)
-    return render_template("units/flashcards_study.html", unit=unit, flashcards=flashcards)
+    progress = FlashcardService.get_unit_progress(unit_id, current_user.id)
+    return render_template("units/flashcards_study.html", unit=unit, flashcards=flashcards, progress=progress)
 
 @unit_bp.route("/<int:unit_id>/flashcards/<int:flashcard_id>/status", methods=["POST"])
 @login_required
@@ -306,6 +307,23 @@ def update_flashcard_status(unit_id, flashcard_id):
         
     status = data['status']
     result = FlashcardService.update_user_status(flashcard_id, current_user.id, status)
+    
+    if result["success"]:
+        return jsonify(result), 200
+    return jsonify(result), 400
+
+@unit_bp.route("/<int:unit_id>/flashcards/progress", methods=["POST"])
+@login_required
+def update_flashcard_progress(unit_id):
+    """API to update user progress for a unit's flashcards."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "message": "Invalid request"}), 400
+        
+    last_card_id = data.get('lastFlashcardId')
+    is_random = data.get('isRandom')
+    
+    result = FlashcardService.update_unit_progress(unit_id, current_user.id, last_card_id, is_random)
     
     if result["success"]:
         return jsonify(result), 200

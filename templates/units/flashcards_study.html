@@ -178,15 +178,15 @@
             title="Đánh dấu ĐÃ thuộc">
             ✅
         </button>
-        <button class="btn btn-light btn-action text-primary" onclick="shuffleCards()"
-            title="Trộn lại flashcards (Từ đầu)">
+        <button id="btnShuffle" class="btn btn-light btn-action text-primary" onclick="toggleRandom()"
+            title="Bật/Tắt chế độ trộn ngẫu nhiên">
             🔀
         </button>
     </div>
 
     <div class="text-center mt-4 text-muted small">
         Phím tắt: [Trái/Phải] Chuyển thẻ &middot; [Cách/Lên] Lật thẻ &middot; [ S ] Phát âm &middot; [ X ] Chưa thuộc
-        &middot; [ V ] Đã thuộc
+        &middot; [ V ] Đã thuộc &middot; [ R ] Trộn thẻ
     </div>
 </div>
 
@@ -201,6 +201,7 @@
     const unitId = {{ unit.id }};
     const allFlashcards = {{ flashcards| tojson | safe }};
     const courseLang = "{{ unit.course.languageCourse|default('zh') }}";
+    const initialProgress = {{ progress| tojson | safe }};
 
     // Ánh xạ sang speech locale
     const langMap = {
@@ -214,12 +215,36 @@
     let currentCards = [...allFlashcards];
     let currentIndex = 0;
     let currentFilter = 'all';
+    let isRandom = initialProgress.isRandom || false;
+
+    // Initialize based on progress
+    if (isRandom) {
+        shuffle(currentCards);
+    }
+
+    if (initialProgress.lastFlashcardId) {
+        const foundIndex = currentCards.findIndex(c => c.id === initialProgress.lastFlashcardId);
+        if (foundIndex !== -1) {
+            currentIndex = foundIndex;
+        }
+    }
 
     const cardBox = document.getElementById('flashcardBox');
     let startX = 0;
     let currentX = 0;
     let isDragging = false;
     let isAnimating = false;
+
+    function updateShuffleButtonUI() {
+        const btn = document.getElementById('btnShuffle');
+        if (isRandom) {
+            btn.classList.remove('btn-light', 'text-primary');
+            btn.classList.add('btn-primary', 'text-white');
+        } else {
+            btn.classList.remove('btn-primary', 'text-white');
+            btn.classList.add('btn-light', 'text-primary');
+        }
+    }
 
     // --- Drag & Drop logic ---
     cardBox.addEventListener('mousedown', dragStart);
@@ -291,6 +316,24 @@
         }
     }
 
+    async function saveProgress() {
+        if (currentCards.length === 0) return;
+        const currentCardId = currentCards[currentIndex].id;
+
+        try {
+            await fetch(`/units/${unitId}/flashcards/progress`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lastFlashcardId: currentCardId,
+                    isRandom: isRandom
+                })
+            });
+        } catch (err) {
+            console.error('Failed to save progress:', err);
+        }
+    }
+
     function renderCurrentCard() {
         const emptyState = document.getElementById('emptyState');
         const container = document.getElementById('flashcardContainer');
@@ -335,6 +378,12 @@
 
         cardBox.style.transition = 'opacity 0.3s ease-in, transform 0.3s ease-out';
         cardBox.style.opacity = '1';
+
+        // Update UI for shuffle
+        updateShuffleButtonUI();
+
+        // Save progress after render (throttled/debounced if needed, but here simple)
+        saveProgress();
     }
 
     function toggleCard() {
@@ -426,11 +475,46 @@
         }
     }
 
-    function shuffleCards() {
+    function toggleRandom() {
         if (isAnimating) return;
-        shuffle(currentCards);
-        currentIndex = 0;
+
+        const currentCardId = currentCards.length > 0 ? currentCards[currentIndex].id : null;
+
+        isRandom = !isRandom;
+
+        // Re-filter and re-shuffle if needed
+        applyFilterAndRandom(currentCardId);
+
+        updateShuffleButtonUI();
         renderCurrentCard();
+    }
+
+    function applyFilterAndRandom(keepCardId = null) {
+        // 1. Filter
+        if (currentFilter === 'all') {
+            currentCards = [...allFlashcards];
+        } else if (currentFilter === 'chua_thuoc') {
+            currentCards = allFlashcards.filter(c => c.status === 'CHUA_THUOC');
+        } else if (currentFilter === 'thuoc') {
+            currentCards = allFlashcards.filter(c => c.status === 'THUOC');
+        }
+
+        // 2. Random
+        if (isRandom) {
+            shuffle(currentCards);
+        }
+
+        // 3. Keep current card index if possible
+        if (keepCardId) {
+            const newIndex = currentCards.findIndex(c => c.id === keepCardId);
+            if (newIndex !== -1) {
+                currentIndex = newIndex;
+            } else {
+                currentIndex = 0;
+            }
+        } else {
+            currentIndex = 0;
+        }
     }
 
     document.querySelectorAll('.option-filter').forEach(btn => {
@@ -443,16 +527,11 @@
             const filter = this.getAttribute('data-filter');
             currentFilter = filter;
 
-            if (filter === 'all') {
-                currentCards = [...allFlashcards];
-            } else if (filter === 'chua_thuoc') {
-                currentCards = allFlashcards.filter(c => c.status === 'CHUA_THUOC');
-            } else if (filter === 'thuoc') {
-                currentCards = allFlashcards.filter(c => c.status === 'THUOC');
-            }
+            const currentCardId = currentCards.length > 0 ? currentCards[currentIndex].id : null;
+
+            applyFilterAndRandom(currentCardId);
 
             if (isAnimating) return;
-            currentIndex = 0;
             renderCurrentCard();
         });
     });
@@ -477,6 +556,8 @@
             swipeAndMark('CHUA_THUOC');
         } else if (event.code === 'KeyS') {
             playSound();
+        } else if (event.code === 'KeyR') {
+            toggleRandom();
         }
     });
 </script>

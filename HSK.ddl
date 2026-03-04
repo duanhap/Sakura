@@ -139,3 +139,15 @@ ADD COLUMN languageCourse VARCHAR(255) NOT NULL AFTER name;
 ALTER TABLE `user`
 ADD COLUMN lastSeen DATETIME NULL,
 ADD COLUMN currentActivity VARCHAR(255) NULL;
+CREATE TABLE unitprogress (
+    id INT(10) NOT NULL AUTO_INCREMENT,
+    UserId INT(10) NOT NULL,
+    UnitId INT(10) NOT NULL,
+    lastFlashcardId INT(10),
+    isRandom TINYINT(1) DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY unique_user_unit_progress (UserId, UnitId),
+    CONSTRAINT FK_Progress_User FOREIGN KEY (UserId) REFERENCES `user`(id),
+    CONSTRAINT FK_Progress_Unit FOREIGN KEY (UnitId) REFERENCES unit(id),
+    CONSTRAINT FK_Progress_Flashcard FOREIGN KEY (lastFlashcardId) REFERENCES flashcard(id)
+);
