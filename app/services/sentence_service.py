@@ -68,19 +68,32 @@ class SentenceService:
             if not line:
                 continue
             
-            # Thuật ngữ: <content> (<pronunciation>) Nghĩa: <meaning>
-            match = re.search(r'Thuật ngữ:\s*(.+?)(?:\s*\((.*?)\))?\s*Nghĩa:\s*(.*)', line, re.IGNORECASE)
-            if match:
-                content = match.group(1).strip()
-                pronunciation = match.group(2).strip() if match.group(2) else ""
-                meaning = match.group(3).strip()
-                
-                sentences_to_add.append(Sentence(
-                    UnitId=unit_id,
-                    content=content,
-                    pronunciation=pronunciation,
-                    meaning=meaning
-                ))
+            # 1. Thử định dạng mới: Thuật ngữ: <content> Cách đọc: [ <pronunciation> ] Nghĩa: <meaning>
+            match_new = re.search(r'Thuật ngữ:\s*(.+?)\s*Cách đọc:\s*\[\s*(.*?)\s*\]\s*Nghĩa:\s*(.*)', line, re.IGNORECASE)
+            
+            # 2. Thử định dạng cũ: Thuật ngữ: <content> (<pronunciation>) Nghĩa: <meaning>
+            match_old = re.search(r'Thuật ngữ:\s*(.+?)(?:\s*\((.*?)\))?\s*Nghĩa:\s*(.*)', line, re.IGNORECASE)
+            
+            if match_new:
+                content = match_new.group(1).strip()
+                pronunciation = match_new.group(2).strip()
+                meaning = match_new.group(3).strip()
+            elif match_old:
+                content = match_old.group(1)
+                # Xử lý trường hợp content bị dính "Cách đọc" nếu regex cũ bắt nhầm (dù khó xảy ra với logic hiện tại)
+                if "Cách đọc:" in content: continue 
+                content = content.strip()
+                pronunciation = match_old.group(2).strip() if match_old.group(2) else ""
+                meaning = match_old.group(3).strip()
+            else:
+                continue
+
+            sentences_to_add.append(Sentence(
+                UnitId=unit_id,
+                content=content,
+                pronunciation=pronunciation,
+                meaning=meaning
+            ))
         
         if sentences_to_add:
             try:
