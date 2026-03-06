@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 import requests
 import urllib.parse
-from app.services import UnitService, FlashcardService, SentenceService, TestService
+from app.services import UnitService, FlashcardService, SentenceService, TestService, GrammarService
 from app.utils import is_admin
 
 unit_bp = Blueprint("unit", __name__, url_prefix="/units")

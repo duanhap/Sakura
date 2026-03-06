@@ -151,3 +151,13 @@ CREATE TABLE unitprogress (
     CONSTRAINT FK_Progress_Unit FOREIGN KEY (UnitId) REFERENCES unit(id),
     CONSTRAINT FK_Progress_Flashcard FOREIGN KEY (lastFlashcardId) REFERENCES flashcard(id)
 );
+
+CREATE TABLE grammar (
+    id INT(10) NOT NULL AUTO_INCREMENT,
+    UnitId INT(10) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    createdAt DATE NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT FK_Grammar_Unit FOREIGN KEY (UnitId) REFERENCES unit(id)
+);
