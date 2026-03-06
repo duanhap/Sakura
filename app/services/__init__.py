@@ -7,6 +7,7 @@ from app.services.mission_service import MissionService
 from app.services.flashcard_service import FlashcardService
 from app.services.sentence_service import SentenceService
 from app.services.test_service import TestService
+from app.services.grammar_service import GrammarService
 
 __all__ = [
     "AuthService",
@@ -17,4 +18,5 @@ __all__ = [
     "FlashcardService",
     "SentenceService",
     "TestService",
+    "GrammarService",
 ]

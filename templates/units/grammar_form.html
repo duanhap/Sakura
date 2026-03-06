@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Sửa' if grammar else 'Thêm' }} Ngữ Pháp | Sakura{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=unit.Courseid) }}">{{
+                    unit.course.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active">{{ 'Sửa' if grammar else 'Thêm' }} Ngữ Pháp</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card sakura-card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+                <div class="card-header bg-pink text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-edit me-2"></i> {{ 'Cập nhật Ngữ pháp' if grammar else 'Thêm Ngữ
+                        pháp mới' }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        <div class="mb-4">
+                            <label for="title" class="form-label fw-bold">Tiêu đề cấu trúc <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title"
+                                value="{{ grammar.title if grammar else '' }}" required
+                                placeholder="VD: Cấu trúc nhờ vả lịch sự: Vていただけませんか"
+                                style="border-radius: 10px; border: 2px solid #eee;">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="content" class="form-label fw-bold">Nội dung giải thích & Ví dụ <span
+                                    class="text-danger">*</span></label>
+                            <textarea class="form-control" id="content" name="content" rows="10" required
+                                placeholder="Nhập nội dung giải thích, cách dùng và ví dụ..."
+                                style="border-radius: 10px; resize: vertical; border: 2px solid #eee;">{{ grammar.content if grammar else '' }}</textarea>
+                            <div class="form-text mt-2 text-muted">
+                                <i class="fas fa-info-circle me-1"></i> Gợi ý: Bạn có thể xuống dòng để phân tách các ý
+                                cho dễ đọc.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{{ url_for('unit.detail', unit_id=unit.id) }}"
+                                class="btn btn-light px-4 py-2 fw-bold" style="border-radius: 10px;">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-pink px-5 py-2 fw-bold text-white shadow-sm"
+                                style="border-radius: 10px; background: linear-gradient(45deg, #ff6b6b, #ff8e8e);">
+                                <i class="fas fa-save me-2"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-pink {
+        background-color: #ff6b6b !important;
+    }
+
+    .btn-pink {
+        background-color: #ff6b6b;
+        border-color: #ff6b6b;
+        color: white;
+    }
+
+    .btn-pink:hover {
+        background-color: #ff5252;
+        border-color: #ff5252;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+    }
+
+    .form-control:focus {
+        border-color: #ff8e8e;
+        box-shadow: 0 0 0 0.25rem rgba(255, 142, 142, 0.25);
+    }
+</style>
+{% endblock %}

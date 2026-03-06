@@ -16,7 +16,28 @@ class GrammarService:
         grammar = Grammar(UnitId=unit_id, title=title, content=content)
         db.session.add(grammar)
         db.session.commit()
-        return grammar
+        return {"success": True, "message": "Thêm ngữ pháp thành công.", "grammar": grammar}
+
+    @staticmethod
+    def update_grammar(grammar_id, title, content):
+        grammar = Grammar.query.get(grammar_id)
+        if not grammar:
+            return {"success": False, "message": "Ngữ pháp không tồn tại."}
+        
+        grammar.title = title
+        grammar.content = content
+        db.session.commit()
+        return {"success": True, "message": "Cập nhật ngữ pháp thành công.", "grammar": grammar}
+
+    @staticmethod
+    def delete_grammar(grammar_id):
+        grammar = Grammar.query.get(grammar_id)
+        if not grammar:
+            return {"success": False, "message": "Ngữ pháp không tồn tại."}
+        
+        db.session.delete(grammar)
+        db.session.commit()
+        return {"success": True, "message": "Xóa ngữ pháp thành công."}
 
     @staticmethod
     def delete_all_grammars(unit_id):

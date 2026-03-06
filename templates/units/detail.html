@@ -294,6 +294,7 @@
                                 <th style="width: 50px;">STT</th>
                                 <th>Tiêu đề</th>
                                 <th>Nội dung</th>
+                                <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -306,10 +307,20 @@
                                         {{ g.content }}
                                     </div>
                                 </td>
+                                <td>
+                                    <a href="{{ url_for('unit.grammar_edit', unit_id=unit.id, grammar_id=g.id) }}"
+                                        class="btn btn-sm btn-outline-secondary">Sửa</a>
+                                    <form method="post"
+                                        action="{{ url_for('unit.grammar_delete', unit_id=unit.id, grammar_id=g.id) }}"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Bạn có chắc muốn xóa mục ngữ pháp này?');">Xóa</button>
+                                    </form>
+                                </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="3" class="text-center text-muted p-4">Chưa có ngữ pháp nào trong bài học
+                                <td colspan="4" class="text-center text-muted p-4">Chưa có ngữ pháp nào trong bài học
                                     này.</td>
                             </tr>
                             {% endfor %}

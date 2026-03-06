@@ -213,6 +213,77 @@ def sentence_import(unit_id):
     return render_template("units/sentence_import.html", unit=unit)
 
 
+@unit_bp.route("/<int:unit_id>/grammar/import", methods=["GET", "POST"])
+@login_required
+@admin_required
+def grammar_import(unit_id):
+    """Import grammar points from a text or file."""
+    unit = UnitService.get_unit(unit_id)
+    if not unit:
+        flash("Bài học không tồn tại.", "danger")
+        return redirect(url_for("course.list"))
+        
+    if request.method == "POST":
+        text_content = request.form.get("text_content", "").strip()
+        file = request.files.get("file")
+        
+        if file and file.filename != '':
+            try:
+                text_content = file.read().decode('utf-8', errors='ignore')
+            except Exception as e:
+                flash("Có lỗi xảy ra khi đọc file.", "danger")
+                return render_template("units/grammar_import.html", unit=unit)
+        
+        if text_content:
+            count = GrammarService.process_grammar_text(unit_id, text_content)
+            flash(f"Đã thêm {count} mục ngữ pháp.", "success")
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+        else:
+            flash("Vui lòng nhập văn bản hoặc chọn file.", "danger")
+            
+    return render_template("units/grammar_import.html", unit=unit)
+
+@unit_bp.route("/<int:unit_id>/grammar/delete_all", methods=["POST"])
+@login_required
+@admin_required
+def grammar_delete_all(unit_id):
+    """Delete all grammar points in a unit."""
+    GrammarService.delete_all_grammars(unit_id)
+    flash("Đã xóa toàn bộ ngữ pháp.", "info")
+    return redirect(url_for("unit.detail", unit_id=unit_id))
+
+@unit_bp.route("/<int:unit_id>/grammar/<int:grammar_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def grammar_edit(unit_id, grammar_id):
+    """Edit a grammar point."""
+    unit = UnitService.get_unit(unit_id)
+    grammar = GrammarService.get_grammar(grammar_id)
+    
+    if not unit or not grammar or grammar.UnitId != unit_id:
+        flash("Dữ liệu không hợp lệ.", "danger")
+        return redirect(url_for("unit.detail", unit_id=unit_id))
+        
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        content = request.form.get("content", "").strip()
+        
+        result = GrammarService.update_grammar(grammar_id, title, content)
+        flash(result["message"], "success" if result["success"] else "danger")
+        if result["success"]:
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+            
+    return render_template("units/grammar_form.html", unit=unit, grammar=grammar)
+
+@unit_bp.route("/<int:unit_id>/grammar/<int:grammar_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def grammar_delete(unit_id, grammar_id):
+    """Delete a grammar point."""
+    result = GrammarService.delete_grammar(grammar_id)
+    flash(result["message"], "info" if result["success"] else "danger")
+    return redirect(url_for("unit.detail", unit_id=unit_id))
+
 @unit_bp.route("/<int:unit_id>/flashcards/export")
 @login_required
 @admin_required
