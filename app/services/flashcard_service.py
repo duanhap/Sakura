@@ -45,6 +45,9 @@ class FlashcardService:
         flashcard = Flashcard.query.get(flashcard_id)
         if not flashcard:
             return {"success": False, "message": "Từ vựng không tồn tại."}
+        # Clear progress referencing this flashcard
+        UnitProgress.query.filter_by(lastFlashcardId=flashcard_id).update({UnitProgress.lastFlashcardId: None})
+        
         db.session.delete(flashcard)
         db.session.commit()
         return {"success": True, "message": "Xóa từ vựng thành công."}
@@ -55,6 +58,9 @@ class FlashcardService:
         FlashcardUser.query.filter(FlashcardUser.FlashcardId.in_(
             db.session.query(Flashcard.id).filter_by(UnitId=unit_id)
         )).delete(synchronize_session=False)
+
+        # Xóa reference trong UnitProgress
+        UnitProgress.query.filter_by(UnitId=unit_id).update({UnitProgress.lastFlashcardId: None})
 
         Flashcard.query.filter_by(UnitId=unit_id).delete()
         db.session.commit()
