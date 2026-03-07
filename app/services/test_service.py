@@ -1,40 +1,91 @@
 import random
 from app.extensions import db
-from app.models import Sentence, ResultUnitTest
+from app.models import Sentence, ResultUnitTest, Unit, Flashcard, Course
 
 class TestService:
     @staticmethod
+    def _segment_text(text, flash_terms):
+        """
+        Phân tách văn bản thành các cụm từ dựa trên danh sách flashcard đã cho (greedy match).
+        Những phần không khớp sẽ được tách thành từng ký tự (trừ dấu câu/khoảng trắng).
+        """
+        # Sắp xếp các cụm từ theo độ dài giảm dần để ưu tiên các từ dài nhất (greedy)
+        sorted_terms = sorted(list(flash_terms), key=len, reverse=True)
+        
+        punctuation = '.,;!?。，！？、'
+        result = []
+        i = 0
+        while i < len(text):
+            char = text[i]
+            # Bỏ qua khoảng trắng hoặc dấu câu trong danh sách kết quả (theo logic cũ)
+            if not char.strip() or char in punctuation:
+                i += 1
+                continue
+            
+            found = False
+            for term in sorted_terms:
+                if text.startswith(term, i):
+                    result.append(term)
+                    i += len(term)
+                    found = True
+                    break
+            
+            if not found:
+                # Nếu không khớp cụm từ nào, lấy từng ký tự (không phải dấu câu đã lọc ở trên)
+                result.append(text[i])
+                i += 1
+                
+        return result
+
+    @staticmethod
     def generate_test(unit_id):
+        unit = Unit.query.get(unit_id)
+        if not unit:
+             return {"success": False, "message": "Bài học không tồn tại."}
+
         sentences = Sentence.query.filter_by(UnitId=unit_id).all()
         if not sentences:
             return {"success": False, "message": "Không có câu nào trong bài học này để tạo bài kiểm tra."}
 
-        # Lấy tất cả các ký tự từ tất cả các câu để làm distractor cho phần nghe
-        all_chars = set()
-        for s in sentences:
-            for char in s.content:
-                if char.strip() and char not in '.,;!?。，！？、': # Loại bỏ dấu câu
-                    all_chars.add(char)
+        # Lấy ngôn ngữ của khóa học hiện tại
+        current_lang = unit.course.languageCourse
         
-        all_chars = list(all_chars)
+        # Lấy tất cả flashcard thuộc ngôn ngữ này trong hệ thống để làm từ điển phân tách câu
+        # Điều này giúp giữ nguyên các "cụm từ" có ý nghĩa thay vì tách rời từng chữ cái
+        flashcards = db.session.query(Flashcard.term).join(Unit).join(Course).filter(Course.languageCourse == current_lang).all()
+        flash_terms = set(f[0] for f in flashcards if f[0])
 
-        questions = []
-        # Chon ngẫu nhiên 15 câu (có thể lặp lại nếu số câu < 15, nhưng cố gắng unique nếu có thể)
+        # Phân tách tất cả các câu trong bài học thành các đơn vị (tokens)
+        all_tokens = set()
+        segmented_sentences_map = {} # sentence_id -> tokens
+
+        for s in sentences:
+            tokens = TestService._segment_text(s.content, flash_terms)
+            segmented_sentences_map[s.id] = tokens
+            for token in tokens:
+                all_tokens.add(token)
+        
+        all_tokens_list = list(all_tokens)
+
+        # Chọn ngẫu nhiên 15 câu (có thể lặp lại nếu số câu < 15, nhưng cố gắng unique nếu có thể)
         selected_sentences = random.choices(sentences, k=15) if len(sentences) < 15 else random.sample(sentences, 15)
         
-        # Xáo trộn để phân loại
+        # Xáo trộn để bắt đầu phân loại
         random.shuffle(selected_sentences)
         
-        # 5 câu nghe
+        questions = []
+        
+        # 5 câu nghe (Mục tiêu chính: Sắp xếp các cụm từ/từ thay vì chữ cái rác)
         for i in range(5):
             s = selected_sentences[i]
-            chars = [c for c in s.content if c.strip() and c not in '.,;!?。，！？、']
+            tokens = segmented_sentences_map[s.id]
+            
             distractors = []
-            available_distractors = [c for c in all_chars if c not in chars]
+            available_distractors = [t for t in all_tokens_list if t not in tokens]
             if available_distractors:
                 distractors = random.sample(available_distractors, min(4, len(available_distractors)))
             
-            options = chars + distractors
+            options = tokens + distractors
             random.shuffle(options)
             
             questions.append({
@@ -44,7 +95,7 @@ class TestService:
                 "pronunciation": s.pronunciation,
                 "meaning": s.meaning,
                 "options": options,
-                "answer": chars
+                "answer": tokens # Trả về mảng tokens để check logic ở JS
             })
 
         # 5 câu nói

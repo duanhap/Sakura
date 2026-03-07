@@ -393,7 +393,7 @@
             const answerBox = document.getElementById('ans-box');
             if (answerBox) {
                 const chars = Array.from(answerBox.children).map(c => c.dataset.char);
-                answers[currentIdx] = chars.join('');
+                answers[currentIdx] = chars; // Lưu dưới dạng mảng để giữ nguyên cụm từ
             }
         } else if (q.type === 'speak') {
             const inp = document.getElementById('speak-ans');
@@ -441,7 +441,7 @@
             const optsArea = document.createElement('div');
             contentArea.appendChild(optsArea);
 
-            let currentAns = answers[idx] ? answers[idx].split('') : [];
+            let currentAns = answers[idx] || []; if (typeof currentAns === 'string') currentAns = [];
 
             // Build answer boxes
             currentAns.forEach((char, i) => {
@@ -478,7 +478,7 @@
                     box.onclick = () => {
                         playAudio(char);
                         currentAns.push(char);
-                        answers[idx] = currentAns.join('');
+                        answers[idx] = currentAns;
                         renderQuestion(currentIdx, true);
                     };
                 }
@@ -779,7 +779,9 @@
         let detailsHtml = '';
 
         questions.forEach((q, idx) => {
-            const userAns = (answers[idx] || '').trim().toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+            let userAnsRaw = answers[idx] || '';
+            if (Array.isArray(userAnsRaw)) userAnsRaw = userAnsRaw.join('');
+            const userAns = userAnsRaw.trim().toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
             let checkAns = "";
             let isCorrect = false;
             let expectedDisplay = "";
@@ -823,7 +825,7 @@
                     <div class="accordion-body bg-light">
                         <p class="mb-1 text-muted"><strong>Đề bài:</strong> ${questionText}</p>
                         <hr class="my-2">
-                        <p class="mb-1"><strong>Bạn trả lời:</strong> <span class="text-primary">${answers[idx] || '<em>Không có trả lời</em>'}</span></p>
+                        <p class="mb-1"><strong>Bạn trả lời:</strong> <span class="text-primary">${Array.isArray(answers[idx]) ? answers[idx].join('') : (answers[idx] || '<em>Không có trả lời</em>')}</span></p>
                         <p class="mb-0"><strong>Đáp án đúng:</strong> <span class="text-success">${expectedDisplay}</span></p>
                     </div>
                 </div>
