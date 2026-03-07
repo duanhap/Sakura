@@ -9,10 +9,15 @@
 {% block content %}
 <style>
     .sakura-card {
+        position: relative;
         background: #fff;
         border-radius: 1rem;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         overflow: hidden;
+    }
+
+    .hide-important {
+        display: none !important;
     }
 
     .question-nav {
@@ -196,58 +201,95 @@
         }
     }
 
-    /* Feedback styles */
-    .feedback-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
+    /* Fixed Feedback overlay inside question area */
+    #question-display {
+        position: relative;
+        min-height: 400px;
+        /* Ensure space for feedback */
+    }
+
+    .feedback-box {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        z-index: 1000;
+        padding: 2rem;
+        border-radius: 1rem;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 2000;
-        color: white;
         text-align: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
+        animation: fadeIn 0.3s ease;
+        backdrop-filter: blur(5px);
     }
 
-    .feedback-overlay.show {
-        opacity: 1;
-        visibility: visible;
+    .feedback-box.correct {
+        display: flex;
+        background: rgba(209, 231, 221, 0.98);
+        border: 4px solid #a3cfbb;
+        color: #0f5132;
     }
 
-    .feedback-content {
-        max-width: 600px;
-        padding: 2rem;
+    .feedback-box.incorrect {
+        display: flex;
+        background: rgba(248, 215, 218, 0.98);
+        border: 4px solid #f1aeb5;
+        color: #842029;
     }
 
-    .feedback-emoji {
-        font-size: 5rem;
-        margin-bottom: 1rem;
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
 
-    .feedback-msg {
-        font-size: 2rem;
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .feedback-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        font-size: 2.5rem;
         font-weight: bold;
         margin-bottom: 1rem;
     }
 
     .feedback-quote {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         font-style: italic;
-        color: #ffecf2;
+        margin-bottom: 1.5rem;
     }
 
-    .celebration-video {
-        max-width: 90%;
-        border-radius: 1rem;
-        box-shadow: 0 0 30px #ff6b9e;
-        margin-bottom: 1rem;
+    .celebration-close-btn {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1002;
+    }
+
+    .ans-correct-label {
+        margin-top: 0.5rem;
+        font-weight: bold;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
     }
 
     #drawing-canvas {
@@ -276,7 +318,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div id="test-header" class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-1">Ôn luyện: {{ unit.name }}</h2>
                     <p class="text-muted mb-0">Hoàn thành bài kiểm tra 15 câu.</p>
@@ -303,40 +345,36 @@
                     <div id="q-content" class="text-center">
                         <!-- Content injected by JS -->
                     </div>
-                </div>
 
-                <div id="q-content" class="text-center">
-                    <!-- Content injected by JS -->
+                    <!-- Feedback Area (Hidden by default) -->
+                    <div id="feedback-box" class="feedback-box">
+                        <div class="feedback-header">
+                            <span id="f-emoji">🎉</span>
+                            <span id="f-msg">TUYỆT VỜI!</span>
+                        </div>
+                        <div id="f-quote" class="feedback-quote">"Tiếp tục như thế nhé! 🌸"</div>
+                        <div id="f-ans-correct" class="ans-correct-label" style="display: none;">
+                            Đáp án đúng: <span id="f-correct-text" class="fs-5"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Footer / Controls -->
-            <div class="d-flex justify-content-between mt-5 pt-3 border-top">
-                <div></div> <!-- Empty left spacing (no prev button) -->
-                <button class="btn btn-outline-danger" id="btn-submit" onclick="submitTest()" style="display: none;">Nộp
-                    Bài</button>
-                <button class="btn btn-pink px-5 py-2 fs-5" id="btn-check" onclick="checkAnswer()">Kiểm tra</button>
-                <button class="btn btn-pink px-5 py-2 fs-5" id="btn-next" onclick="goToNext()"
+            <div id="footer-controls" class="d-flex justify-content-between mt-4 pt-3 border-top">
+                <div></div> <!-- Empty left spacing -->
+                <button class="btn btn-outline-danger px-4 rounded-pill" id="btn-submit" onclick="submitTest()"
+                    style="display: none;">Nộp Bài</button>
+                <button class="btn btn-pink px-5 py-2 fs-5 rounded-pill shadow" id="btn-check"
+                    onclick="checkAnswer()">Kiểm tra</button>
+                <button class="btn btn-dark px-5 py-2 fs-5 rounded-pill shadow" id="btn-next" onclick="goToNext()"
                     style="display: none;">Tiếp tục</button>
             </div>
         </div>
 
-        <!-- Feedback Overlay -->
-        <div id="feedback-overlay" class="feedback-overlay" onclick="closeFeedback()">
-            <div class="feedback-content">
-                <div id="celebration-area" style="display: none;">
-                    <video id="sugoi-video" class="celebration-video" preload="auto">
-                        <source src="/static/video/sugoi.mp4" type="video/mp4">
-                    </video>
-                </div>
-                <div class="feedback-emoji" id="f-emoji">🎉</div>
-                <div class="feedback-msg" id="f-msg">GỎI QUÁ!</div>
-                <div class="feedback-quote" id="f-quote">"Tiếp tục như thế nhé! 🌸"</div>
-                <div class="mt-4">
-                    <small>Chạm vào màn hình để tiếp tục...</small>
-                </div>
-            </div>
-        </div>
+        <!-- Preload Audio Elements -->
+        <audio id="audio-correct" src="/static/audio/correct.mp3" preload="auto"></audio>
+        <audio id="audio-incorrect" src="/static/audio/incorrect.mp3" preload="auto"></audio>
 
         <!-- Result Container (Hidden implicitly) -->
         <div class="card sakura-card p-5 text-center" id="result-container" style="display: none;">
@@ -495,10 +533,13 @@
         const btnNext = document.getElementById('btn-next');
         const btnSubmit = document.getElementById('btn-submit');
 
+        // Nếu chưa có kết quả thì hiện nút Check
         if (results[currentIdx] === null) {
             btnCheck.style.display = 'block';
             btnNext.style.display = 'none';
+            btnSubmit.style.display = 'none';
         } else {
+            // Đã trả lời xong
             btnCheck.style.display = 'none';
             if (currentIdx === questions.length - 1) {
                 btnNext.style.display = 'none';
@@ -518,6 +559,8 @@
     }
 
     function checkAnswer() {
+        if (results[currentIdx] !== null) return; // Không check lại
+
         saveCurrentAnswer();
         const q = questions[currentIdx];
         const userAnsRaw = Array.isArray(answers[currentIdx]) ? answers[currentIdx].join('') : (answers[currentIdx] || '');
@@ -525,75 +568,69 @@
 
         let checkAns = "";
         let isCorrect = false;
+        let expectedDisplay = "";
 
         if (q.type === 'listen') {
             checkAns = q.answer.join('').toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
             isCorrect = checkAns === userAns;
+            expectedDisplay = q.answer.join('');
         } else if (q.type === 'speak') {
             checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
             isCorrect = checkAns === userAns;
+            expectedDisplay = q.content;
         } else if (q.type === 'read') {
             checkAns = q.meaning.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
             isCorrect = checkAns === userAns || (userAns.length > 2 && checkAns.includes(userAns));
+            expectedDisplay = q.meaning;
         } else if (q.type === 'write') {
-            checkAns = q.content.toLowerCase().replace(/[.,;!? handheld。，！？、\s]/g, "");
+            checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
             isCorrect = checkAns === userAns;
+            expectedDisplay = q.content;
         }
 
         results[currentIdx] = isCorrect;
 
         if (isCorrect) {
             streakCount++;
+            document.getElementById('audio-correct').play().catch(() => { });
             showFeedback(true);
-            playAudio("Correct!");
         } else {
             streakCount = 0;
-            showFeedback(false);
-            playAudio("Incorrect!");
+            document.getElementById('audio-incorrect').play().catch(() => { });
+            showFeedback(false, expectedDisplay);
         }
 
         updateNavState();
     }
 
-    function showFeedback(correct) {
-        const overlay = document.getElementById('feedback-overlay');
+    function showFeedback(correct, expected = "") {
+        const box = document.getElementById('feedback-box');
         const emoji = document.getElementById('f-emoji');
         const msg = document.getElementById('f-msg');
         const quote = document.getElementById('f-quote');
+        const ansArea = document.getElementById('f-ans-correct');
         const celebArea = document.getElementById('celebration-area');
         const video = document.getElementById('sugoi-video');
 
+        // Reset
+        box.className = 'feedback-box';
+        ansArea.style.display = 'none';
         celebArea.style.display = 'none';
 
         if (correct) {
+            box.classList.add('correct');
             emoji.innerText = "🎉";
-            msg.innerText = "TUYỆT VỜI!";
-            msg.className = "feedback-msg text-success";
-            quote.innerText = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-
-            // Check streak for sugoi video
-            if (streakCount > 0 && streakCount % 5 === 0) {
-                celebArea.style.display = 'block';
-                video.currentTime = 0;
-                video.play().catch(() => { });
-            }
         } else {
+            box.classList.add('incorrect');
             emoji.innerText = "❌";
             msg.innerText = "TIẾC QUÁ!";
-            msg.className = "feedback-msg text-danger";
-            quote.innerText = "Đừng nản chí nhé, tiếp tục thôi! 💪";
+            quote.innerText = "Đừng nản chí nhé, hãy xem đáp án và tiếp tục thôi! 💪";
+            ansArea.style.display = 'block';
+            document.getElementById('f-correct-text').innerText = expected;
         }
 
-        overlay.classList.add('show');
-    }
-
-    function closeFeedback() {
-        const overlay = document.getElementById('feedback-overlay');
-        const video = document.getElementById('sugoi-video');
-        video.pause();
-        overlay.classList.remove('show');
-
-        // Auto go next if correct? Or let user click? User click is better for focus.
+        // Scroll to feedback if needed
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function saveCurrentAnswer() {
@@ -621,6 +658,10 @@
         currentIdx = idx;
         const q = questions[idx];
 
+        // Reset feedback
+        document.getElementById('feedback-box').className = 'feedback-box';
+        document.getElementById('f-ans-correct').style.display = 'none';
+
         const title = document.getElementById('q-title');
         const contentArea = document.getElementById('q-content');
         contentArea.innerHTML = '';
@@ -630,7 +671,7 @@
         else if (q.type === 'read') typeText = "ĐỌC";
         else if (q.type === 'write') typeText = "VIẾT";
 
-        title.innerHTML = `<span class="badge bg-secondary mb-2">${typeText}</span><br>Câu ${idx + 1}`;
+        title.innerHTML = `<span class="badge bg-secondary mb-2">${typeText}</span>`;
 
         if (q.type === 'listen') {
             if (isReRender) return; // Không vẽ lại hoàn toàn nếu đang di chuyển từ
@@ -994,8 +1035,6 @@
     }
 
     function submitTest() {
-        if (!confirm("Bạn có chắc chắn muốn nộp bài? Câu hỏi chưa trả lời sẽ tính là sai.")) return;
-
         saveCurrentAnswer();
         clearInterval(timerInterval);
 
@@ -1062,6 +1101,13 @@
         // Hiển thị kết quả
         document.getElementById('quiz-container').style.display = 'none';
         document.getElementById('result-container').style.display = 'block';
+
+        // Ẩn thông tin thừa dứt khoát
+        const header = document.getElementById('test-header');
+        if (header) header.classList.add('hide-important');
+
+        const footer = document.getElementById('footer-controls');
+        if (footer) footer.classList.add('hide-important');
 
         document.getElementById('res-score').innerText = Math.round(scorePercentage) + '%';
         const m = Math.floor(timeSeconds / 60).toString().padStart(2, '0');
