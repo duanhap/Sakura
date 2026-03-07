@@ -1,4 +1,5 @@
 from app.repositories import MissionRepository, TaskRepository
+from app.services.test_service import TestService
 
 
 class MissionService:
@@ -87,8 +88,20 @@ class MissionService:
         if task.mission.Userid != current_user_id and not is_admin:
             return {"success": False, "message": "Bạn không có quyền cập nhật task này."}
         
+        # Nếu task được đánh dấu là chưa hoàn thành -> muốn chuyển sang hoàn thành
+        if not task.isCompleted:
+            # Kiểm tra nếu task có gắn với Unit
+            if task.Unitid:
+                record = TestService.get_record(current_user_id, task.Unitid)
+                # Nếu chưa có kỷ lục hoặc kỷ lục dưới 85%
+                if not record or record.get('score', 0) < 85:
+                    return {
+                        "success": False, 
+                        "message": f"🌸 Hù! Bạn chưa đạt kỉ lục 85% cho bài học này đâu nè. Hãy cố gắng ôn tập thêm một chút để hoàn thành task nhé! ✨ (Kỉ lục hiện tại: {record['score'] if record else 0}%)"
+                    }
+
         task = TaskRepository.update(task_id, isCompleted=not task.isCompleted)
-        return {"success": True, "message": "Cập nhật trạng thái task thành công.", "task": task}
+        return {"success": True, "message": "Tuyệt vời! Cập nhật trạng thái task thành công. ✨", "task": task}
 
     @staticmethod
     def get_mission_progress(mission_id):

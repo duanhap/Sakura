@@ -811,6 +811,9 @@
 
     function playAudio(text) {
         if ('speechSynthesis' in window) {
+            // Dừng bất kỳ âm thanh nào đang phát hoặc đang đợi trong hàng đợi
+            window.speechSynthesis.cancel();
+
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = speechLang;
             window.speechSynthesis.speak(utterance);
