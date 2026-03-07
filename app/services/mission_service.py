@@ -12,8 +12,10 @@ class MissionService:
 
     @staticmethod
     def get_user_missions(user_id):
-        """Get all missions of a user."""
-        return MissionRepository.get_by_user(user_id)
+        """Get only uncompleted missions of a user."""
+        all_missions = MissionRepository.get_by_user(user_id)
+        # Chỉ trả về những mission có ít nhất một task chưa hoàn thành
+        return [m for m in all_missions if any(not t.isCompleted for t in m.tasks)]
 
     @staticmethod
     def get_all_missions():
@@ -95,9 +97,10 @@ class MissionService:
                 record = TestService.get_record(current_user_id, task.Unitid)
                 # Nếu chưa có kỷ lục hoặc kỷ lục dưới 85%
                 if not record or record.get('score', 0) < 85:
+                    current_score = int(record['score']) if record else 0
                     return {
                         "success": False, 
-                        "message": f"🌸 Hù! Bạn chưa đạt kỉ lục 85% cho bài học này đâu nè. Hãy cố gắng ôn tập thêm một chút để hoàn thành task nhé! ✨ (Kỉ lục hiện tại: {record['score'] if record else 0}%)"
+                        "message": f"🌸 Hù! Bạn chưa đạt kỉ lục 85% cho bài học này đâu nè. Hãy cố gắng ôn tập thêm một chút để hoàn thành task nhé! ✨ (Kỉ lục hiện tại: {current_score}%)"
                     }
 
         task = TaskRepository.update(task_id, isCompleted=not task.isCompleted)
