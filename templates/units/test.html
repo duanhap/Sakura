@@ -3,6 +3,7 @@
 {% block title %}Ôn luyện: {{ unit.name }} | Sakura{% endblock %}
 
 {% block page_activity %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>window.SAKURA_ACTIVITY = "taking_test";</script>{% endblock %}
 
 {% block content %}
@@ -73,11 +74,40 @@
     }
 
     .char-box.used {
-        opacity: 0.5;
+        opacity: 0.3;
         pointer-events: none;
         border-style: dashed;
         background: #f8f9fa;
         color: transparent;
+    }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background: #ffecf2;
+        border: 2px dashed #ff6b9e;
+    }
+
+    .sortable-chosen {
+        transform: scale(1.1);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+    }
+
+    .sortable-drag {
+        opacity: 1;
+        cursor: grabbing;
+    }
+
+    .opts-area {
+        min-height: 80px;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: 1rem;
     }
 
     .answer-area {
@@ -425,7 +455,7 @@
 
         if (q.type === 'listen') {
             // Nghe: Nghe audio và chọn từ
-            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghe và sắp xếp các từ theo đúng thứ tự</div>`;
+            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghe và sắp xếp các từ theo đúng thứ tự (Bấm hoặc Kéo thả)</div>`;
 
             const btn = document.createElement('button');
             btn.className = 'speaker-btn mb-4';
@@ -436,12 +466,17 @@
             const ansArea = document.createElement('div');
             ansArea.className = 'answer-area';
             ansArea.id = 'ans-box';
+            ansArea.dataset.type = 'answer';
             contentArea.appendChild(ansArea);
 
             const optsArea = document.createElement('div');
+            optsArea.className = 'opts-area';
+            optsArea.id = 'opts-box';
+            optsArea.dataset.type = 'options';
             contentArea.appendChild(optsArea);
 
-            let currentAns = answers[idx] || []; if (typeof currentAns === 'string') currentAns = [];
+            let currentAns = answers[idx] || [];
+            if (typeof currentAns === 'string') currentAns = [];
 
             // Build answer boxes
             currentAns.forEach((char, i) => {
@@ -452,10 +487,9 @@
                 box.innerText = char;
                 box.onclick = () => {
                     playAudio(char);
-                    // remove char
                     box.remove();
                     saveCurrentAnswer();
-                    renderQuestion(currentIdx, true); // re-render to restore option
+                    renderQuestion(currentIdx, true);
                 };
                 ansArea.appendChild(box);
             });
@@ -470,6 +504,7 @@
             q.options.forEach((char, i) => {
                 const box = document.createElement('div');
                 box.className = 'char-box';
+                box.dataset.char = char;
                 box.innerText = char;
 
                 if (currentAns.filter(c => c === char).length >= q.options.filter(c => c === char).length || availableOptions[i] === null) {
@@ -485,11 +520,30 @@
                 optsArea.appendChild(box);
             });
 
-            // Tự động phát âm thanh khi đến câu này (tuỳ chọn)
+            // Initialize Sortable
+            const sortableOptions = {
+                group: 'shared',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                filter: '.used', // Không cho kéo các ô đã sử dụng
+                onEnd: () => {
+                    saveCurrentAnswer();
+                    // Để đảm bảo logic "used" ở opts-box được cập nhật, ta re-render nhẹ nếu cần
+                    // Nhưng thực tế Sortable đã di chuyển DOM rồi, ta chỉ cần update lại mảng answer
+                    const newAns = Array.from(ansArea.children).map(c => c.dataset.char);
+                    answers[currentIdx] = newAns;
+                    renderQuestion(currentIdx, true);
+                }
+            };
+
+            Sortable.create(ansArea, sortableOptions);
+            Sortable.create(optsArea, sortableOptions);
+
             if (!isReRender) {
                 setTimeout(() => playAudio(q.content), 500);
             }
-
         } else if (q.type === 'speak') {
             // Nói: Cho nghĩa, yêu cầu đọc thuật ngữ
             title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghĩa: <strong>${q.meaning}</strong></div><div class="fs-6 mt-1 mb-3">Hãy đọc to thuật ngữ này!</div>`;
