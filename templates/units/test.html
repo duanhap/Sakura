@@ -609,17 +609,15 @@
         const msg = document.getElementById('f-msg');
         const quote = document.getElementById('f-quote');
         const ansArea = document.getElementById('f-ans-correct');
-        const celebArea = document.getElementById('celebration-area');
-        const video = document.getElementById('sugoi-video');
-
         // Reset
         box.className = 'feedback-box';
         ansArea.style.display = 'none';
-        celebArea.style.display = 'none';
 
         if (correct) {
             box.classList.add('correct');
             emoji.innerText = "🎉";
+            msg.innerText = "TUYỆT VỜI!";
+            quote.innerText = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
         } else {
             box.classList.add('incorrect');
             emoji.innerText = "❌";
