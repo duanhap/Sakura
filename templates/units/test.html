@@ -99,28 +99,36 @@
     }
 
     .opts-area {
-        min-height: 80px;
+        min-height: 100px;
         padding: 1rem;
         background: rgba(0, 0, 0, 0.02);
-        border-radius: 0.5rem;
+        border: 2px dashed rgba(255, 107, 158, 0.1);
+        border-radius: 0.8rem;
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
         justify-content: center;
-        margin-top: 1rem;
+        margin-top: 1.5rem;
+        transition: all 0.3s ease;
     }
 
     .answer-area {
-        min-height: 80px;
+        min-height: 100px;
         padding: 1rem;
-        border: 2px dashed #ced4da;
-        border-radius: 0.5rem;
+        border: 2px dashed #ff6b9e;
+        border-radius: 0.8rem;
         margin-bottom: 1.5rem;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
+        justify-content: center;
         gap: 0.5rem;
-        background: #f8f9fa;
+        background: #fff;
+        transition: background-color 0.3s ease;
+    }
+
+    .answer-area.drag-over {
+        background-color: #fff0f6;
     }
 
     .speaker-btn {
@@ -454,8 +462,9 @@
         title.innerHTML = `<span class="badge bg-secondary mb-2">${typeText}</span><br>Câu ${idx + 1}`;
 
         if (q.type === 'listen') {
-            // Nghe: Nghe audio và chọn từ
-            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghe và sắp xếp các từ theo đúng thứ tự (Bấm hoặc Kéo thả)</div>`;
+            if (isReRender) return; // Không vẽ lại hoàn toàn nếu đang di chuyển từ
+
+            title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghe và sắp xếp (Kéo thả hoặc Bấm vào từ)</div>`;
 
             const btn = document.createElement('button');
             btn.className = 'speaker-btn mb-4';
@@ -466,84 +475,72 @@
             const ansArea = document.createElement('div');
             ansArea.className = 'answer-area';
             ansArea.id = 'ans-box';
-            ansArea.dataset.type = 'answer';
             contentArea.appendChild(ansArea);
 
             const optsArea = document.createElement('div');
             optsArea.className = 'opts-area';
             optsArea.id = 'opts-box';
-            optsArea.dataset.type = 'options';
             contentArea.appendChild(optsArea);
 
             let currentAns = answers[idx] || [];
             if (typeof currentAns === 'string') currentAns = [];
 
-            // Build answer boxes
-            currentAns.forEach((char, i) => {
+            // Helper to sync data
+            const syncData = () => {
+                answers[idx] = Array.from(ansArea.children).map(c => c.dataset.char);
+                updateNavState();
+            };
+
+            // Tạo các thẻ từ
+            const createCard = (char) => {
                 const box = document.createElement('div');
                 box.className = 'char-box';
                 box.dataset.char = char;
-                box.dataset.index = i;
                 box.innerText = char;
                 box.onclick = () => {
                     playAudio(char);
-                    box.remove();
-                    saveCurrentAnswer();
-                    renderQuestion(currentIdx, true);
+                    // Nếu đang ở ans-box thì chuyển về opts-box, và ngược lại
+                    if (box.parentElement.id === 'ans-box') {
+                        optsArea.appendChild(box);
+                    } else {
+                        ansArea.appendChild(box);
+                    }
+                    syncData();
                 };
-                ansArea.appendChild(box);
-            });
+                return box;
+            };
 
-            // Build options
-            const availableOptions = [...q.options];
-            currentAns.forEach(c => {
-                const i = availableOptions.indexOf(c);
-                if (i > -1) availableOptions[i] = null;
-            });
-
-            q.options.forEach((char, i) => {
-                const box = document.createElement('div');
-                box.className = 'char-box';
-                box.dataset.char = char;
-                box.innerText = char;
-
-                if (currentAns.filter(c => c === char).length >= q.options.filter(c => c === char).length || availableOptions[i] === null) {
-                    box.classList.add('used');
-                } else {
-                    box.onclick = () => {
-                        playAudio(char);
-                        currentAns.push(char);
-                        answers[idx] = currentAns;
-                        renderQuestion(currentIdx, true);
-                    };
+            // Render INITIAL state
+            // Những từ nào đã chọn thì cho vào ansArea, còn lại vào optsArea
+            const tempOptions = [...q.options];
+            currentAns.forEach(char => {
+                const i = tempOptions.indexOf(char);
+                if (i > -1) {
+                    ansArea.appendChild(createCard(char));
+                    tempOptions.splice(i, 1);
                 }
-                optsArea.appendChild(box);
             });
 
-            // Initialize Sortable
+            tempOptions.forEach(char => {
+                optsArea.appendChild(createCard(char));
+            });
+
+            // Initialize Sortable (Chỉ 1 lần duy nhất)
             const sortableOptions = {
                 group: 'shared',
-                animation: 150,
+                animation: 200,
                 ghostClass: 'sortable-ghost',
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
-                filter: '.used', // Không cho kéo các ô đã sử dụng
                 onEnd: () => {
-                    saveCurrentAnswer();
-                    // Để đảm bảo logic "used" ở opts-box được cập nhật, ta re-render nhẹ nếu cần
-                    // Nhưng thực tế Sortable đã di chuyển DOM rồi, ta chỉ cần update lại mảng answer
-                    const newAns = Array.from(ansArea.children).map(c => c.dataset.char);
-                    answers[currentIdx] = newAns;
-                    renderQuestion(currentIdx, true);
+                    syncData();
                 }
             };
 
             Sortable.create(ansArea, sortableOptions);
             Sortable.create(optsArea, sortableOptions);
 
-            if (!isReRender) {
-                setTimeout(() => playAudio(q.content), 500);
-            }
+            setTimeout(() => playAudio(q.content), 500);
         } else if (q.type === 'speak') {
             // Nói: Cho nghĩa, yêu cầu đọc thuật ngữ
             title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghĩa: <strong>${q.meaning}</strong></div><div class="fs-6 mt-1 mb-3">Hãy đọc to thuật ngữ này!</div>`;
