@@ -356,6 +356,9 @@
                         <div id="f-ans-correct" class="ans-correct-label" style="display: none;">
                             Đáp án đúng: <span id="f-correct-text" class="fs-5"></span>
                         </div>
+                        <div id="f-detailed-feedback" class="mt-2 text-dark fs-5" style="display: none;">
+                            <strong>Kết quả chính xác:</strong> <span id="f-highlight-text"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -558,33 +561,83 @@
         }
     }
 
+    function calculateSimilarity(s1, s2) {
+        const clean = (s) => s.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+        const c1 = clean(s1);
+        const c2 = clean(s2);
+        if (!c1 && !c2) return 1;
+        if (!c1 || !c2) return 0;
+        if (c1 === c2) return 1;
+
+        const track = Array(c2.length + 1).fill(null).map(() =>
+            Array(c1.length + 1).fill(null));
+        for (let i = 0; i <= c1.length; i += 1) track[0][i] = i;
+        for (let j = 0; j <= c2.length; j += 1) track[j][0] = j;
+        for (let j = 1; j <= c2.length; j += 1) {
+            for (let i = 1; i <= c1.length; i += 1) {
+                const indicator = c1[i - 1] === c2[j - 1] ? 0 : 1;
+                track[j][i] = Math.min(
+                    track[j - 1][i] + 1,
+                    track[j][i - 1] + 1,
+                    track[j - 1][i - 1] + indicator
+                );
+            }
+        }
+        const distance = track[c2.length][c1.length];
+        return 1 - (distance / Math.max(c1.length, c2.length));
+    }
+
+    function getHighlightedText(expected, actual) {
+        const isCJK = /[\u4e00-\u9fa5\u3040-\u30ff]/.test(expected);
+        const tokens = isCJK ? expected.split('') : expected.split(/(\s+)/);
+        const actualClean = (actual || "").toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+
+        const underlineStyle = 'border-bottom: 2px solid #dc3545; background-color: #fff5f5; color: #dc3545; padding: 0 2px; border-radius: 2px;';
+
+        return tokens.map(token => {
+            const tokenClean = token.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+            if (!tokenClean) return token;
+
+            if (actualClean.includes(tokenClean)) {
+                return token;
+            } else {
+                return `<span style="${underlineStyle}">${token}</span>`;
+            }
+        }).join('');
+    }
+
     function checkAnswer() {
         if (results[currentIdx] !== null) return; // Không check lại
 
         saveCurrentAnswer();
         const q = questions[currentIdx];
-        const userAnsRaw = Array.isArray(answers[currentIdx]) ? answers[currentIdx].join('') : (answers[currentIdx] || '');
-        const userAns = userAnsRaw.trim().toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+        let userAnsRaw = Array.isArray(answers[currentIdx]) ? answers[currentIdx].join('') : (answers[currentIdx] || '');
+        let userAns = userAnsRaw.trim().toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
 
         let checkAns = "";
         let isCorrect = false;
         let expectedDisplay = "";
+        let similarity = 0;
 
         if (q.type === 'listen') {
             checkAns = q.answer.join('').toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
-            isCorrect = checkAns === userAns;
+            similarity = calculateSimilarity(q.answer.join(''), userAnsRaw);
+            isCorrect = similarity >= 0.8;
             expectedDisplay = q.answer.join('');
         } else if (q.type === 'speak') {
             checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
-            isCorrect = checkAns === userAns;
-            expectedDisplay = q.content;
+            similarity = calculateSimilarity(q.content, userAnsRaw);
+            isCorrect = similarity >= 0.8;
+            expectedDisplay = q.pronunciation || q.content;
         } else if (q.type === 'read') {
             checkAns = q.meaning.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
-            isCorrect = checkAns === userAns || (userAns.length > 2 && checkAns.includes(userAns));
+            similarity = calculateSimilarity(q.meaning, userAnsRaw);
+            isCorrect = checkAns === userAns || (userAns.length > 2 && checkAns.includes(userAns)) || similarity >= 0.8;
             expectedDisplay = q.meaning;
         } else if (q.type === 'write') {
             checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
-            isCorrect = checkAns === userAns;
+            similarity = calculateSimilarity(q.content, userAnsRaw);
+            isCorrect = similarity >= 0.8;
             expectedDisplay = q.content;
         }
 
@@ -593,38 +646,101 @@
         if (isCorrect) {
             streakCount++;
             document.getElementById('audio-correct').play().catch(() => { });
-            showFeedback(true);
+            showFeedback(true, expectedDisplay, userAnsRaw);
         } else {
             streakCount = 0;
             document.getElementById('audio-incorrect').play().catch(() => { });
-            showFeedback(false, expectedDisplay);
+            showFeedback(false, expectedDisplay, userAnsRaw);
         }
 
         updateNavState();
     }
 
-    function showFeedback(correct, expected = "") {
+    function getHighlightedSpeakText(expectedContent, expectedPron, actual) {
+        if (!expectedPron) return getHighlightedText(expectedContent, actual);
+        const isCJK = /[\u4e00-\u9fa5\u3040-\u30ff]/.test(expectedContent);
+
+        const actualClean = (actual || "").toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+        const pronTokens = expectedPron.split(/\s+/).filter(p => p.trim());
+        const contentTokens = expectedContent.split('').filter(c => c.trim().replace(/[.,;!?。，！？、\s]/g, ""));
+
+        const underlineStyle = 'border-bottom: 2px solid #dc3545; background-color: #fff5f5; color: #dc3545; padding: 0 2px; border-radius: 2px;';
+
+        if (!actualClean) return pronTokens.map(t => `<span style="${underlineStyle}">${t}</span>`).join(' ');
+
+        if (!isCJK || contentTokens.length !== pronTokens.length) {
+            // If not CJK or tokens don't match 1:1, fallback to simple matching
+            return pronTokens.map(token => {
+                const tClean = token.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+                if (actualClean.includes(tClean)) return token;
+                return `<span style="${underlineStyle}">${token}</span>`;
+            }).join(' ');
+        }
+
+        return pronTokens.map((token, i) => {
+            const char = contentTokens[i];
+            const charClean = char.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
+
+            if (actualClean.includes(charClean)) {
+                return token;
+            } else {
+                return `<span style="${underlineStyle}">${token}</span>`;
+            }
+        }).join(' ');
+    }
+
+    function showFeedback(correct, expected = "", actual = "") {
         const box = document.getElementById('feedback-box');
         const emoji = document.getElementById('f-emoji');
         const msg = document.getElementById('f-msg');
         const quote = document.getElementById('f-quote');
         const ansArea = document.getElementById('f-ans-correct');
+        const detailedArea = document.getElementById('f-detailed-feedback');
+        const highlightText = document.getElementById('f-highlight-text');
+
         // Reset
         box.className = 'feedback-box';
         ansArea.style.display = 'none';
+        detailedArea.style.display = 'none';
+
+        const q = questions[currentIdx];
 
         if (correct) {
             box.classList.add('correct');
             emoji.innerText = "🎉";
             msg.innerText = "TUYỆT VỜI!";
             quote.innerText = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+
+            // Show detailed feedback line only if similarity is between 80% and 100%
+            const isTargetType = ['speak', 'write', 'read', 'listen'].includes(q.type);
+            if (isTargetType && expected) {
+                const matchTarget = (q.type === 'speak') ? q.content : expected;
+                const similarity = calculateSimilarity(matchTarget, actual);
+                if (similarity < 1.0 && actual.trim() !== "") {
+                    detailedArea.style.display = 'block';
+                    if (q.type === 'speak') {
+                        highlightText.innerHTML = getHighlightedSpeakText(q.content, q.pronunciation, actual);
+                    } else {
+                        highlightText.innerHTML = getHighlightedText(expected, actual);
+                    }
+                }
+            }
         } else {
             box.classList.add('incorrect');
             emoji.innerText = "❌";
             msg.innerText = "TIẾC QUÁ!";
             quote.innerText = "Đừng nản chí nhé, hãy xem đáp án và tiếp tục thôi! 💪";
             ansArea.style.display = 'block';
-            document.getElementById('f-correct-text').innerText = expected;
+
+            const isTargetType = ['speak', 'write', 'read', 'listen'].includes(q.type);
+            if (isTargetType && expected) {
+                const hText = (q.type === 'speak')
+                    ? getHighlightedSpeakText(q.content, q.pronunciation, actual)
+                    : getHighlightedText(expected, actual);
+                document.getElementById('f-correct-text').innerHTML = hText;
+            } else {
+                document.getElementById('f-correct-text').innerText = expected;
+            }
         }
 
         // Scroll to feedback if needed
@@ -640,6 +756,7 @@
                 answers[currentIdx] = chars; // Lưu dưới dạng mảng để giữ nguyên cụm từ
             }
         } else if (q.type === 'speak') {
+            // Already saved in onresult, do not overwrite if input is missing
             const inp = document.getElementById('speak-ans');
             if (inp) answers[currentIdx] = inp.value;
         } else if (q.type === 'read') {
@@ -755,14 +872,22 @@
             // Nói: Cho nghĩa, yêu cầu đọc thuật ngữ
             title.innerHTML += `<div class="fs-5 fw-normal mt-2 text-muted">Nghĩa: <strong>${q.meaning}</strong></div><div class="fs-6 mt-1 mb-3">Hãy đọc to thuật ngữ này!</div>`;
 
-            const ansInput = document.createElement('input');
-            ansInput.type = 'text';
-            ansInput.id = 'speak-ans';
-            ansInput.className = 'form-control text-center fs-3 mb-4 w-75 mx-auto';
-            ansInput.placeholder = 'Kết quả nhận diện giọng nói...';
-            ansInput.readOnly = true;
-            ansInput.value = answers[idx] || '';
-            contentArea.appendChild(ansInput);
+            // Progress Display Area
+            const progressArea = document.createElement('div');
+            progressArea.id = 'speak-progress';
+            progressArea.className = 'fs-2 fw-bold text-pink mb-4';
+            progressArea.style.minHeight = '1.2em';
+
+            // Initial placeholder: _ for each token
+            const isCJK = /[\u4e00-\u9fa5\u3040-\u30ff]/.test(q.content);
+            const tokens = isCJK ? q.content.split('') : q.content.split(/(\s+)/);
+            progressArea.innerHTML = tokens.map(t => {
+                const clean = t.trim().replace(/[.,;!?。，！？、]/g, "");
+                if (!clean) return t; // space or punctuation
+                return `<span class="progress-token" data-clean="${clean.toLowerCase()}" style="color: #dee2e6;">${t}</span>`;
+            }).join('');
+
+            contentArea.appendChild(progressArea);
 
             const micBtn = document.createElement('button');
             micBtn.className = 'mic-btn mb-3';
@@ -773,31 +898,72 @@
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 recognition = new SpeechRecognition();
                 recognition.lang = speechLang;
-                recognition.continuous = false;
-                recognition.interimResults = false;
+                recognition.continuous = true;
+                recognition.interimResults = true;
 
                 recognition.onstart = () => {
                     micBtn.classList.add('recording');
                 };
                 recognition.onresult = (e) => {
-                    const res = e.results[0][0].transcript;
-                    ansInput.value = res.replace(/[.,;!?。，！？、\s]/g, ""); // Dọn dẹp dấu
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = e.resultIndex; i < e.results.length; ++i) {
+                        if (e.results[i].isFinal) {
+                            finalTranscript += e.results[i][0].transcript;
+                        } else {
+                            interimTranscript += e.results[i][0].transcript;
+                        }
+                    }
+
+                    const combined = (finalTranscript + interimTranscript).toLowerCase();
+                    // ansInput removed per user request
+
+                    // Update progress display sequentially
+                    const tokenSpans = progressArea.querySelectorAll('.progress-token');
+                    let allMatched = true;
+                    let searchIdx = 0;
+                    let sequenceBroken = false;
+
+                    tokenSpans.forEach(span => {
+                        if (sequenceBroken) {
+                            allMatched = false;
+                            return;
+                        }
+                        const cleanToken = span.dataset.clean;
+                        const matchIdx = combined.indexOf(cleanToken, searchIdx);
+
+                        if (matchIdx !== -1) {
+                            span.style.color = '#ff6b9e'; // Matched color
+                            searchIdx = matchIdx + cleanToken.length;
+                        } else {
+                            allMatched = false;
+                            sequenceBroken = true; // Stop matching further tokens in this pass
+                        }
+                    });
+
+                    if (allMatched && finalTranscript) {
+                        // Auto stop if all words recorded and we have final result
+                        // (optional, but requested behavior "khi nào nói đúng hết thì sẽ hiện lên hết")
+                    }
+
+                    answers[idx] = combined;
                     saveCurrentAnswer();
                 };
                 recognition.onend = () => {
                     micBtn.classList.remove('recording');
                 };
-                recognition.onerror = () => {
+                recognition.onerror = (event) => {
                     micBtn.classList.remove('recording');
-                    alert("Không nhận diện được giọng nói. Có thể nhập tay.");
+                    console.error("Speech recognition error", event.error);
                 };
 
                 micBtn.onclick = () => {
                     if (micBtn.classList.contains('recording')) {
                         recognition.stop();
                     } else {
-                        ansInput.value = '';
-                        saveCurrentAnswer();
+                        // Reset progress colors
+                        progressArea.querySelectorAll('.progress-token').forEach(span => span.style.color = '#dee2e6');
                         recognition.start();
                     }
                 };
@@ -841,6 +1007,11 @@
             ansInput.onchange = () => saveCurrentAnswer();
             ansInput.onkeyup = () => saveCurrentAnswer();
 
+            inputWrapper.appendChild(ansInput);
+
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'd-flex justify-content-center gap-2';
+
             const btnPen = document.createElement('button');
             btnPen.className = 'btn btn-outline-pink fs-5 px-4 rounded-pill shadow-sm';
             btnPen.innerHTML = '✏️ Bảng Vẽ';
@@ -850,8 +1021,8 @@
                 hwModal.show();
             };
 
-            inputWrapper.appendChild(ansInput);
-            inputWrapper.appendChild(btnPen);
+            btnGroup.appendChild(btnPen);
+            inputWrapper.appendChild(btnGroup);
             contentArea.appendChild(inputWrapper);
         }
 
@@ -1049,23 +1220,19 @@
             let expectedDisplay = "";
 
             if (q.type === 'listen') {
-                checkAns = q.answer.join('').toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
                 expectedDisplay = q.answer.join('');
+                isCorrect = calculateSimilarity(expectedDisplay, userAnsRaw) >= 0.8;
             } else if (q.type === 'speak') {
-                checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
-                expectedDisplay = q.content;
+                expectedDisplay = q.pronunciation || q.content;
+                let userAnsActual = Array.isArray(answers[idx]) ? answers[idx].join('') : (answers[idx] || '');
+                isCorrect = calculateSimilarity(q.content, userAnsActual) >= 0.8;
             } else if (q.type === 'read') {
                 checkAns = q.meaning.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
                 expectedDisplay = q.meaning;
-                // Đối với nghĩa, có thể có sai lệch tiếng Việt, so sánh chuỗi đã loại khoảng trắng/dấu
-                isCorrect = checkAns === userAns || (userAns.length > 2 && checkAns.includes(userAns));
+                isCorrect = checkAns === userAns || (userAns.length > 2 && checkAns.includes(userAns)) || calculateSimilarity(q.meaning, userAnsRaw) >= 0.8;
             } else if (q.type === 'write') {
-                checkAns = q.content.toLowerCase().replace(/[.,;!?。，！？、\s]/g, "");
                 expectedDisplay = q.content;
-            }
-
-            if (q.type !== 'read') {
-                isCorrect = checkAns === userAns;
+                isCorrect = calculateSimilarity(q.content, userAnsRaw) >= 0.8;
             }
 
             if (isCorrect) correctCount++;
