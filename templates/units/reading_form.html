@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Sửa' if reading else 'Thêm' }} Bài Đọc | Sakura{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=unit.Courseid) }}">{{
+                    unit.course.name }}</a></li>
+            <li class="breadcrumb-item active"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active">{{ 'Sửa' if reading else 'Thêm' }} Bài Đọc</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card sakura-card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-book-open me-2"></i> {{ 'Cập nhật Bài đọc' if reading else 'Thêm Bài đọc mới' }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        <div class="mb-4">
+                            <label for="title" class="form-label fw-bold">Tiêu đề <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title"
+                                value="{{ reading.title if reading else '' }}" required
+                                placeholder="VD: Cuộc sống ở trạm vũ trụ như thế nào?"
+                                style="border-radius: 10px; border: 2px solid #eee;">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="content" class="form-label fw-bold">Thuật ngữ (Japanese) <span
+                                    class="text-danger">*</span></label>
+                            <textarea class="form-control" id="content" name="content" rows="8" required
+                                placeholder="Nhập văn bản tiếng Nhật..."
+                                style="border-radius: 10px; resize: vertical; border: 2px solid #eee;">{{ reading.content if reading else '' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="pronunciation" class="form-label fw-bold">Cách đọc (Romaji/Reading)</label>
+                            <textarea class="form-control" id="pronunciation" name="pronunciation" rows="8"
+                                placeholder="Nhập cách đọc..."
+                                style="border-radius: 10px; resize: vertical; border: 2px solid #eee;">{{ reading.pronunciation if reading else '' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="translation" class="form-label fw-bold">Dịch (Vietnamese)</label>
+                            <textarea class="form-control" id="translation" name="translation" rows="8"
+                                placeholder="Nhập bản dịch tiếng Việt..."
+                                style="border-radius: 10px; resize: vertical; border: 2px solid #eee;">{{ reading.translation if reading else '' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="video_url" class="form-label fw-bold">YouTube Video URL</label>
+                            <input type="url" class="form-control" id="video_url" name="video_url"
+                                value="{{ reading.videoUrl if reading else '' }}"
+                                placeholder="VD: https://www.youtube.com/watch?v=..."
+                                style="border-radius: 10px; border: 2px solid #eee;">
+                        </div>
+
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div>
+                                {% if reading %}
+                                <a href="{{ url_for('unit.reading_subtitle_import', unit_id=unit.id, reading_id=reading.id) }}" 
+                                   class="btn btn-outline-dark fw-bold" style="border-radius: 10px;">
+                                    <i class="fas fa-closed-captioning me-2"></i> Quản lý phụ đề (SRT)
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('unit.detail', unit_id=unit.id) }}"
+                                    class="btn btn-light px-4 py-2 fw-bold" style="border-radius: 10px;">Hủy bỏ</a>
+                                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold text-white shadow-sm"
+                                    style="border-radius: 10px;">
+                                    <i class="fas fa-save me-2"></i> Lưu bài đọc
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        border-color: #4dabf7;
+        box-shadow: 0 0 0 0.25rem rgba(77, 171, 247, 0.25);
+    }
+</style>
+{% endblock %}

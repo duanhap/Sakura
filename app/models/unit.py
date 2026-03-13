@@ -19,3 +19,5 @@ class Unit(db.Model):
     flashcards = db.relationship("Flashcard", back_populates="unit", lazy="dynamic", cascade="all, delete-orphan")
     sentences = db.relationship("Sentence", back_populates="unit", lazy="dynamic", cascade="all, delete-orphan")
     grammars = db.relationship("Grammar", back_populates="unit", lazy="dynamic", cascade="all, delete-orphan")
+    readings = db.relationship("Reading", back_populates="unit", lazy="dynamic", cascade="all, delete-orphan")
+

@@ -34,9 +34,10 @@
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4 mb-5">
     <!-- Chế độ Ôn từ vựng Flashcard -->
-    <div class="col-md-6">
+    <div class="col-md-6 col-lg-4">
+
         <div class="card sakura-card h-100 border-0 shadow-sm text-center p-4"
             style="background: linear-gradient(135deg, #fff 0%, #fff0f6 100%);">
             <div class="mb-3">
@@ -52,7 +53,8 @@
     </div>
 
     <!-- Chế độ Luyện bài tập -->
-    <div class="col-md-6">
+    <div class="col-md-6 col-lg-4">
+
         <div class="card sakura-card h-100 border-0 shadow-sm text-center p-4"
             style="background: linear-gradient(135deg, #fff 0%, #f0f7ff 100%);">
             <div class="mb-3">
@@ -63,11 +65,44 @@
             </p>
             <div>
                 <a href="{{ url_for('unit.test_study', unit_id=unit.id) }}" class="btn btn-primary px-4 py-2"
-                    style="background-color: #5b9de7; border-color: #5b9de7;">Làm bài tập</a>
+                    style="background-color: #4dabf7; border-color: #4dabf7;">Làm bài tập</a>
             </div>
         </div>
     </div>
+
+    <!-- Chế độ Luyện đọc (Video) -->
+    {% set ns = namespace(found=None) %}
+    {% for r in unit.readings.all() %}
+        {% if r.videoUrl and r.videoUrl.strip() %}
+            {% if not ns.found %}
+                {% set ns.found = r %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {% if ns.found %}
+    {% set first_video_reading = ns.found %}
+
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card sakura-card h-100 border-0 shadow-sm text-center p-4"
+            style="background: linear-gradient(135deg, #fff 0%, #f3f0ff 100%);">
+            <div class="mb-3">
+                <span style="font-size: 3rem;">📖</span>
+            </div>
+            <h4 class="text-dark fw-bold mb-3">Luyện đọc cùng Video</h4>
+            <p class="text-muted mb-4">Luyện kỹ năng đọc và nghe thông qua video có phụ đề tương tác.</p>
+            <div>
+                <a href="{{ url_for('unit.reading_list_practice', unit_id=unit.id) }}" 
+                   class="btn btn-success px-4 py-2"
+                   style="background: linear-gradient(45deg, #4267B2, #e91e63); border: none; color: white;">Bắt đầu luyện</a>
+
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
 
 <!-- Section Ngữ pháp -->
 {% if unit.grammars.count() > 0 %}
@@ -117,6 +152,65 @@
     }
 </style>
 
+<!-- Section Bài đọc -->
+{% set unit_readings = unit.readings.all() %}
+{% if unit_readings|length > 0 %}
+<div class="mt-5 mb-5 pb-3">
+
+    <div class="d-flex align-items-center mb-4">
+        <div style="width: 5px; height: 30px; background: #4dabf7; border-radius: 5px; margin-right: 15px;"></div>
+        <h3 class="fw-bold mb-0" style="color: #444;">📖 Bài đọc hiểu</h3>
+    </div>
+
+    <div class="row row-cols-1 g-4">
+        {% for reading in unit_readings %}
+
+        <div class="col">
+            <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 18px; border-top: 5px solid #4dabf7 !important;">
+                <div class="card-header bg-white border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h4 class="fw-bold text-primary mb-0">{{ reading.title }}</h4>
+                    {% if reading.videoUrl %}
+                    <a href="{{ url_for('unit.reading_practice', unit_id=unit.id, reading_id=reading.id) }}" 
+                       class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm"
+                       style="background: linear-gradient(45deg, #4267B2, #e91e63); border: none;">
+                        <i class="fas fa-play-circle me-1"></i> Xem video luyện đọc
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="row">
+                        <div class="col-lg-6 mb-4 mb-lg-0">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-muted mb-0">Văn bản (Japanese)</h6>
+                                <button class="btn btn-sm btn-outline-primary btn-toggle-pron" data-target="pron-{{ reading.id }}">Hiện cách đọc</button>
+                            </div>
+                            <div class="p-3 bg-light rounded shadow-inner mb-3" style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.8;">{{ reading.content }}</div>
+                            
+                            <div id="pron-{{ reading.id }}" class="d-none">
+                                <h6 class="text-muted mb-2">Cách đọc</h6>
+                                <div class="p-3 bg-light rounded mb-0" style="white-space: pre-wrap; font-size: 1rem; color: #666; font-style: italic;">{{ reading.pronunciation }}</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-muted mb-0">Dịch (Vietnamese)</h6>
+                                <button class="btn btn-sm btn-outline-info btn-toggle-trans" data-target="trans-{{ reading.id }}">Hiện bản dịch</button>
+                            </div>
+                            <div id="trans-{{ reading.id }}" class="d-none">
+                                <div class="p-3 border-start border-4 border-info bg-light rounded" style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.8; color: #444;">{{ reading.translation }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
 {% if is_admin() %}
 <div class="mt-5">
     <h4 class="text-pink mb-3"><span class="me-2">🛠️</span>Quản lý Nội dung (Admin)</h4>
@@ -141,6 +235,13 @@
                 <span class="me-1">📖</span> Ngữ Pháp
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-reading" data-bs-toggle="tab" data-bs-target="#panel-reading" type="button"
+                role="tab" aria-controls="panel-reading" aria-selected="false">
+                <span class="me-1">📚</span> Bài Đọc
+            </button>
+        </li>
+
     </ul>
 
     <!-- Tab content -->
@@ -329,8 +430,71 @@
                 </div>
             </div>
         </div>
+        <!-- Reading Tab -->
+        <div class="tab-pane fade" id="panel-reading" role="tabpanel" aria-labelledby="tab-reading">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-dark mb-0">Quản lý Bài Đọc</h5>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('unit.reading_new', unit_id=unit.id) }}" class="btn btn-outline-pink btn-sm">➕ Thêm bài đọc</a>
+                    <a href="{{ url_for('unit.reading_import', unit_id=unit.id) }}" class="btn btn-pink btn-sm">📥 Nhập dữ liệu</a>
+                    <form method="post" action="{{ url_for('unit.reading_delete_all', unit_id=unit.id) }}"
+                        class="d-inline"
+                        onsubmit="return confirm('Bạn có chắc chắn muốn xóa TẤT CẢ bài đọc trong bài này không?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Xóa tất cả</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card sakura-card">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th>Tiêu đề</th>
+                                <th>Nội dung</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in unit.readings %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td class="fw-bold text-dark">{{ r.title }}</td>
+                                <td>
+                                    <div class="small text-truncate" style="max-width: 400px;">
+                                        {{ r.content }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('unit.reading_practice', unit_id=unit.id, reading_id=r.id) }}"
+                                        class="btn btn-sm btn-outline-primary" title="Luyện đọc">▶️</a>
+                                    <a href="{{ url_for('unit.reading_subtitle_import', unit_id=unit.id, reading_id=r.id) }}"
+                                        class="btn btn-sm btn-outline-dark" title="Nhập phụ đề">📝 Sub</a>
+                                    <a href="{{ url_for('unit.reading_edit', unit_id=unit.id, reading_id=r.id) }}"
+                                        class="btn btn-sm btn-outline-secondary">Sửa</a>
+                                    <form method="post"
+                                        action="{{ url_for('unit.reading_delete', unit_id=unit.id, reading_id=r.id) }}"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Bạn có chắc muốn xóa bài đọc này?');">Xóa</button>
+                                    </form>
+                                </td>
+
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted p-4">Chưa có bài đọc nào trong bài học này.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
 {% endif %}
 
 <script>
@@ -360,6 +524,33 @@
                 });
             });
         });
+        // Toggle pronunciation and translation
+        document.querySelectorAll('.btn-toggle-pron').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const target = document.getElementById(this.dataset.target);
+                if (target.classList.contains('d-none')) {
+                    target.classList.remove('d-none');
+                    this.textContent = 'Ẩn cách đọc';
+                } else {
+                    target.classList.add('d-none');
+                    this.textContent = 'Hiện cách đọc';
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-toggle-trans').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const target = document.getElementById(this.dataset.target);
+                if (target.classList.contains('d-none')) {
+                    target.classList.remove('d-none');
+                    this.textContent = 'Ẩn bản dịch';
+                } else {
+                    target.classList.add('d-none');
+                    this.textContent = 'Hiện bản dịch';
+                }
+            });
+        });
     });
 </script>
+
 {% endblock %}

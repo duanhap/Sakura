@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Chọn bài luyện đọc - {{ unit.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}" class="text-pink">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}" class="text-pink">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Luyện đọc cùng Video</li>
+        </ol>
+    </nav>
+
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-dark mb-3">
+            <span class="me-2">🎬</span> Chọn bài luyện đọc
+        </h2>
+        <p class="text-muted mx-auto" style="max-width: 600px;">
+            Hãy chọn một bài đọc bên dưới để bắt đầu luyện kỹ năng nghe và đọc thông qua video có phụ đề tương tác.
+        </p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        {% for reading in readings %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm overflow-hidden reading-choice-card" 
+                 style="border-radius: 20px; transition: all 0.3s ease;">
+                <div class="card-img-top position-relative" style="height: 180px; background-color: #000;">
+                    {# YouTube Thumbnail #}
+                    {% set video_id = "" %}
+                    {% if "youtube.com/watch?v=" in reading.videoUrl %}
+                        {% set video_id = reading.videoUrl.split("watch?v=")[1].split("&")[0] %}
+                    {% elif "youtu.be/" in reading.videoUrl %}
+                        {% set video_id = reading.videoUrl.split("youtu.be/")[1].split("?")[0] %}
+                    {% endif %}
+                    
+                    {% if video_id %}
+                    <img src="https://img.youtube.com/vi/{{ video_id }}/mqdefault.jpg" 
+                         class="w-100 h-100 object-fit-cover opacity-75" alt="Thumbnail">
+                    {% endif %}
+                    
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="play-button-icon">
+                            <i class="fas fa-play text-white fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <h5 class="fw-bold text-dark mb-3">{{ reading.title }}</h5>
+                    <p class="text-muted small text-truncate-2 mb-4">{{ reading.content }}</p>
+                    <a href="{{ url_for('unit.reading_practice', unit_id=unit.id, reading_id=reading.id) }}" 
+                       class="btn btn-pink-gradient w-100 py-3 fw-bold shadow-sm" style="border-radius: 12px;">
+                       Bắt đầu luyện
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not readings %}
+        <div class="col-12 text-center py-5">
+            <div class="mb-4">
+                <span style="font-size: 4rem;">📥</span>
+            </div>
+            <h4 class="text-muted">Chưa có bài đọc nào có video trong bài học này.</h4>
+            <a href="{{ url_for('unit.detail', unit_id=unit.id) }}" class="btn btn-outline-pink mt-3 px-4">Quay lại</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .reading-choice-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(255, 107, 107, 0.2) !important;
+    }
+
+    .play-button-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 107, 107, 0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        transition: transform 0.2s ease;
+    }
+
+    .reading-choice-card:hover .play-button-icon {
+        transform: scale(1.1);
+    }
+
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .btn-pink-gradient {
+        background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+        color: white;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-pink-gradient:hover {
+        background: linear-gradient(45deg, #fa5252, #ff6b6b);
+        color: white;
+        transform: scale(1.02);
+    }
+
+    .object-fit-cover {
+        object-fit: cover;
+    }
+</style>
+{% endblock %}

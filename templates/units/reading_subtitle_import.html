@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Nhập Phụ Đề | Sakura{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active">Nhập Phụ Đề: {{ reading.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card sakura-card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+                <div class="card-header bg-dark text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-closed-captioning me-2"></i> Nhập file phụ đề (SRT)</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-secondary border-0 shadow-sm"
+                        style="border-radius: 12px;">
+                        <h6 class="fw-bold"><i class="fas fa-info-circle me-2"></i> Định dạng phụ đề chuẩn (.srt):</h6>
+                        <pre class="mb-0 mt-2 bg-light p-3 rounded border" style="font-size: 0.85rem;">
+1
+00:00:14,000 --> 00:00:18,000
+宇宙ステーションはどこにあるんですか。
+
+2
+00:00:18,000 --> 00:00:22,000
+地球から４００キロ上を飛んでいます。</pre>
+                        <p class="small mt-2 mb-0 text-muted">Hệ thống sẽ tự động so khớp Thuật ngữ với các câu/từ vựng đã có trong bài để tìm Cách đọc và Dịch.</p>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" class="mt-4">
+                        <div class="mb-4">
+                            <label for="srt_text" class="form-label fw-bold">Cách 1: Dán nội dung SRT</label>
+                            <textarea class="form-control" id="srt_text" name="srt_text" rows="12"
+                                placeholder="Dán nội dung SRT vào đây..."
+                                style="border-radius: 12px; font-family: monospace; border: 2px solid #eee;"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="fileUpload" class="form-label fw-bold">Cách 2: Chọn tệp .srt hoặc .txt</label>
+                            <input class="form-control" type="file" id="fileUpload" name="file" accept=".srt,.txt"
+                                style="border-radius: 12px; border: 2px solid #eee;">
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-5">
+                            <a href="{{ url_for('unit.detail', unit_id=unit.id) }}"
+                                class="btn btn-light px-4 py-2 fw-bold">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-dark px-5 py-2 fw-bold text-white shadow-sm">
+                                <i class="fas fa-save me-2"></i> Lưu phụ đề
+                            </button>
+                        </div>
+                    </form>
+
+                    {% set current_subs = reading.subtitles.all() %}
+                    {% if current_subs|length > 0 %}
+                    <hr class="my-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Phụ đề hiện tại ({{ current_subs|length }})</h5>
+                        <form action="{{ url_for('unit.reading_subtitle_delete_all', unit_id=unit.id, reading_id=reading.id) }}" method="POST" onsubmit="return confirm('Xóa toàn bộ phụ đề hiện tại?');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash-alt me-1"></i> Xóa tất cả
+                            </button>
+                        </form>
+                    </div>
+
+
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>Thời gian</th>
+                                    <th>Nội dung</th>
+                                    <th>Cách đọc / Dịch</th>
+                                    <th class="text-end">Hành động</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for sub in current_subs %}
+
+                                <tr>
+                                    <td class="small">{{ sub.startTime }} - {{ sub.endTime }}ms</td>
+                                    <td class="fw-bold">{{ sub.content }}</td>
+                                    <td class="small text-muted">
+                                        {{ sub.pronunciation }}<br>{{ sub.translation }}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <button class="btn btn-sm btn-outline-primary edit-sub-btn" 
+                                                    data-id="{{ sub.id }}"
+                                                    data-content="{{ sub.content }}"
+                                                    data-pron="{{ sub.pronunciation }}"
+                                                    data-trans="{{ sub.translation }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form action="{{ url_for('unit.reading_subtitle_delete', unit_id=unit.id, reading_id=reading.id, subtitle_id=sub.id) }}" 
+                                                  method="POST" onsubmit="return confirm('Xóa dòng này?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sửa Phụ Đề -->
+<div class="modal fade" id="editSubModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form id="editSubForm" method="POST">
+            <div class="modal-content" style="border-radius: 15px;">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Chỉnh sửa phụ đề</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nội dung (Japanese)</label>
+                        <input type="text" name="content" id="edit_content" class="form-control" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cách đọc</label>
+                        <input type="text" name="pronunciation" id="edit_pronunciation" class="form-control" style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Dịch</label>
+                        <textarea name="translation" id="edit_translation" class="form-control" rows="2" style="border-radius: 10px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">Cập nhật</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editBtns = document.querySelectorAll('.edit-sub-btn');
+    const modal = new bootstrap.Modal(document.getElementById('editSubModal'));
+    const form = document.getElementById('editSubForm');
+    
+    editBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const content = this.getAttribute('data-content');
+            const pron = this.getAttribute('data-pron');
+            const trans = this.getAttribute('data-trans');
+            
+            document.getElementById('edit_content').value = content;
+            document.getElementById('edit_pronunciation').value = pron;
+            document.getElementById('edit_translation').value = trans;
+            
+            form.action = "{{ url_for('unit.reading_subtitle_edit', unit_id=unit.id, reading_id=reading.id, subtitle_id=0) }}".replace('/0/edit', '/' + id + '/edit');
+            
+            modal.show();
+        });
+    });
+});
+</script>
+
+
+{% endblock %}

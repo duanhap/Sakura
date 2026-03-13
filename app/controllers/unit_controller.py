@@ -2,8 +2,10 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 import requests
 import urllib.parse
-from app.services import UnitService, FlashcardService, SentenceService, TestService, GrammarService
+from app.services import UnitService, FlashcardService, SentenceService, TestService, GrammarService, ReadingService
+from app.extensions import db
 from app.utils import is_admin
+
 
 unit_bp = Blueprint("unit", __name__, url_prefix="/units")
 
@@ -284,7 +286,229 @@ def grammar_delete(unit_id, grammar_id):
     flash(result["message"], "info" if result["success"] else "danger")
     return redirect(url_for("unit.detail", unit_id=unit_id))
 
+@unit_bp.route("/<int:unit_id>/reading/import", methods=["GET", "POST"])
+@login_required
+@admin_required
+def reading_import(unit_id):
+    """Import reading lessons from text or file."""
+    unit = UnitService.get_unit(unit_id)
+    if not unit:
+        flash("Bài học không tồn tại.", "danger")
+        return redirect(url_for("course.list"))
+        
+    if request.method == "POST":
+        text_content = request.form.get("text_content", "").strip()
+        file = request.files.get("file")
+        
+        if file and file.filename != '':
+            try:
+                text_content = file.read().decode('utf-8', errors='ignore')
+            except Exception as e:
+                flash("Có lỗi xảy ra khi đọc file.", "danger")
+                return render_template("units/reading_import.html", unit=unit)
+        
+        if text_content:
+            count = ReadingService.process_reading_text(unit_id, text_content)
+            flash(f"Đã thêm {count} bài đọc.", "success")
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+        else:
+            flash("Vui lòng nhập văn bản hoặc chọn file.", "danger")
+            
+    return render_template("units/reading_import.html", unit=unit)
+
+@unit_bp.route("/<int:unit_id>/reading/delete_all", methods=["POST"])
+@login_required
+@admin_required
+def reading_delete_all(unit_id):
+    """Delete all reading lessons in a unit."""
+    ReadingService.delete_all_readings(unit_id)
+    flash("Đã xóa toàn bộ bài đọc.", "info")
+    return redirect(url_for("unit.detail", unit_id=unit_id))
+
+@unit_bp.route("/<int:unit_id>/reading/new", methods=["GET", "POST"])
+@login_required
+@admin_required
+def reading_new(unit_id):
+    """Add a new reading lesson."""
+    unit = UnitService.get_unit(unit_id)
+    if not unit:
+        flash("Bài học không tồn tại.", "danger")
+        return redirect(url_for("course.list"))
+        
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        content = request.form.get("content", "").strip()
+        pronunciation = request.form.get("pronunciation", "").strip()
+        translation = request.form.get("translation", "").strip()
+        video_url = request.form.get("video_url", "").strip()
+        
+        result = ReadingService.create_reading(unit_id, title, content, pronunciation, translation, video_url)
+
+        flash(result["message"], "success" if result["success"] else "danger")
+        if result["success"]:
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+            
+    return render_template("units/reading_form.html", unit=unit, reading=None)
+
+@unit_bp.route("/<int:unit_id>/reading/<int:reading_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def reading_edit(unit_id, reading_id):
+    """Edit a reading lesson."""
+    unit = UnitService.get_unit(unit_id)
+    reading = ReadingService.get_reading(reading_id)
+    
+    if not unit or not reading or reading.UnitId != unit_id:
+        flash("Dữ liệu không hợp lệ.", "danger")
+        return redirect(url_for("unit.detail", unit_id=unit_id))
+        
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        content = request.form.get("content", "").strip()
+        pronunciation = request.form.get("pronunciation", "").strip()
+        translation = request.form.get("translation", "").strip()
+        video_url = request.form.get("video_url", "").strip()
+        
+        result = ReadingService.update_reading(reading_id, title, content, pronunciation, translation, video_url)
+        flash(result["message"], "success" if result["success"] else "danger")
+        if result["success"]:
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+            
+    return render_template("units/reading_form.html", unit=unit, reading=reading)
+
+@unit_bp.route("/<int:unit_id>/reading/<int:reading_id>/subtitles/import", methods=["GET", "POST"])
+@login_required
+@admin_required
+def reading_subtitle_import(unit_id, reading_id):
+    """Import SRT subtitles for a reading lesson."""
+    unit = UnitService.get_unit(unit_id)
+    reading = ReadingService.get_reading(reading_id)
+    
+    if not unit or not reading or reading.UnitId != unit_id:
+        flash("Dữ liệu không hợp lệ.", "danger")
+        return redirect(url_for("unit.detail", unit_id=unit_id))
+        
+    if request.method == "POST":
+        srt_text = request.form.get("srt_text", "").strip()
+        file = request.files.get("file")
+        
+        if file and file.filename != '':
+            try:
+                srt_text = file.read().decode('utf-8', errors='ignore')
+            except Exception as e:
+                flash("Có lỗi xảy ra khi đọc file.", "danger")
+                return render_template("units/reading_subtitle_import.html", unit=unit, reading=reading)
+        
+        if srt_text:
+            count = ReadingService.process_srt_content(reading_id, srt_text)
+            flash(f"Đã cập nhật {count} dòng phụ đề.", "success")
+            return redirect(url_for("unit.detail", unit_id=unit_id))
+        else:
+            flash("Vui lòng nhập văn bản hoặc chọn file.", "danger")
+            
+    return render_template("units/reading_subtitle_import.html", unit=unit, reading=reading)
+
+@unit_bp.route("/<int:unit_id>/reading/<int:reading_id>/subtitles/delete", methods=["POST"])
+@login_required
+@admin_required
+def reading_subtitle_delete_all(unit_id, reading_id):
+    """Delete all subtitles for a reading lesson."""
+    from app.models import ReadingSubtitle
+    from app.extensions import db
+    ReadingSubtitle.query.filter_by(ReadingId=reading_id).delete()
+    db.session.commit()
+    flash("Đã xóa toàn bộ phụ đề.", "info")
+    return redirect(url_for("unit.reading_subtitle_import", unit_id=unit_id, reading_id=reading_id))
+
+
+@unit_bp.route("/<int:unit_id>/reading/<int:reading_id>/subtitles/<int:subtitle_id>/edit", methods=["POST"])
+@login_required
+@admin_required
+def reading_subtitle_edit(unit_id, reading_id, subtitle_id):
+    """Edit a single subtitle entry."""
+    from app.models import ReadingSubtitle
+    sub = ReadingSubtitle.query.get(subtitle_id)
+    if not sub or sub.ReadingId != reading_id:
+        return {"success": False, "message": "Không tìm thấy phụ đề."}, 404
+    
+    sub.content = request.form.get("content", "").strip()
+    sub.pronunciation = request.form.get("pronunciation", "").strip()
+    sub.translation = request.form.get("translation", "").strip()
+    
+    db.session.commit()
+    flash("Đã cập nhật phụ đề.", "success")
+    return redirect(url_for("unit.reading_subtitle_import", unit_id=unit_id, reading_id=reading_id))
+
+@unit_bp.route("/<int:unit_id>/reading/<int:reading_id>/subtitles/<int:subtitle_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def reading_subtitle_delete(unit_id, reading_id, subtitle_id):
+    """Delete a single subtitle entry."""
+    from app.models import ReadingSubtitle
+    sub = ReadingSubtitle.query.get(subtitle_id)
+    if not sub or sub.ReadingId != reading_id:
+        return {"success": False, "message": "Không tìm thấy phụ đề."}, 404
+    
+    db.session.delete(sub)
+    db.session.commit()
+    flash("Đã xóa phụ đề.", "info")
+    return redirect(url_for("unit.reading_subtitle_import", unit_id=unit_id, reading_id=reading_id))
+
+
+@unit_bp.route("/<int:unit_id>/reading/practice")
+
+@login_required
+def reading_list_practice(unit_id):
+    """Show list of readings for practice selection."""
+    unit = UnitService.get_unit(unit_id)
+    if not unit:
+        flash("Bài học không tồn tại.", "danger")
+        return redirect(url_for("course.list"))
+    
+    # Only readings that have a videoUrl
+    readings = [r for r in unit.readings.all() if r.videoUrl and r.videoUrl.strip()]
+    
+    return render_template("units/reading_list.html", unit=unit, readings=readings)
+
+
+@unit_bp.route("/<int:unit_id>/reading/<int:reading_id>/practice")
+
+@login_required
+def reading_practice(unit_id, reading_id):
+    """Practice reading with video background and subtitles."""
+    unit = UnitService.get_unit(unit_id)
+    reading = ReadingService.get_reading(reading_id)
+    
+    if not unit or not reading or reading.UnitId != unit_id:
+        flash("Dữ liệu không hợp lệ.", "danger")
+        return redirect(url_for("unit.detail", unit_id=unit_id))
+        
+    if not reading.videoUrl:
+        flash("Bài đọc này không có video để luyện tập.", "warning")
+        return redirect(url_for("unit.detail", unit_id=unit_id))
+        
+    subtitles = reading.subtitles.order_by("startTime").all()
+    # Extract YouTube ID from URL
+    video_id = ""
+    if "youtube.com/watch?v=" in reading.videoUrl:
+        video_id = reading.videoUrl.split("watch?v=")[1].split("&")[0]
+    elif "youtu.be/" in reading.videoUrl:
+        video_id = reading.videoUrl.split("youtu.be/")[1].split("?")[0]
+        
+    return render_template("units/reading_practice.html", unit=unit, reading=reading, subtitles=subtitles, video_id=video_id)
+
+
+@unit_bp.route("/<int:unit_id>/reading/<int:reading_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def reading_delete(unit_id, reading_id):
+    """Delete a reading lesson."""
+    result = ReadingService.delete_reading(reading_id)
+    flash(result["message"], "info" if result["success"] else "danger")
+    return redirect(url_for("unit.detail", unit_id=unit_id))
+
 @unit_bp.route("/<int:unit_id>/flashcards/export")
+
 @login_required
 @admin_required
 def flashcard_export(unit_id):

@@ -161,3 +161,30 @@ CREATE TABLE grammar (
     PRIMARY KEY (id),
     CONSTRAINT FK_Grammar_Unit FOREIGN KEY (UnitId) REFERENCES unit(id)
 );
+
+CREATE TABLE reading (
+    id INT(10) NOT NULL AUTO_INCREMENT,
+    UnitId INT(10) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    pronunciation TEXT,
+    pronunciation TEXT,
+    videoUrl VARCHAR(255),
+    createdAt DATE NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT FK_Reading_Unit FOREIGN KEY (UnitId) REFERENCES unit(id)
+);
+
+CREATE TABLE reading_subtitle (
+    id INT(10) NOT NULL AUTO_INCREMENT,
+    ReadingId INT(10) NOT NULL,
+    startTime INT NOT NULL, -- thời gian bắt đầu tính bằng giây hoặc mili giây
+    endTime INT NOT NULL,
+    content TEXT NOT NULL,
+    pronunciation TEXT,
+    translation TEXT,
+    PRIMARY KEY (id),
+    CONSTRAINT FK_Subtitle_Reading FOREIGN KEY (ReadingId) REFERENCES reading(id) ON DELETE CASCADE
+);
+
+

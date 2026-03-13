@@ -9,5 +9,9 @@ from app.models.sentence import Sentence
 from app.models.result_unit_test import ResultUnitTest
 from app.models.unit_progress import UnitProgress
 from app.models.grammar import Grammar
+from app.models.reading import Reading
+from app.models.reading_subtitle import ReadingSubtitle
 
-__all__ = ["User", "Course", "Unit", "Mission", "Task", "Flashcard", "FlashcardUser", "Sentence", "ResultUnitTest", "UnitProgress", "Grammar"]
+
+
+__all__ = ["User", "Course", "Unit", "Mission", "Task", "Flashcard", "FlashcardUser", "Sentence", "ResultUnitTest", "UnitProgress", "Grammar", "Reading", "ReadingSubtitle"]

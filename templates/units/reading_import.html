@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Nhập Bài Đọc | Sakura{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=unit.Courseid) }}">{{
+                    unit.course.name }}</a></li>
+            <li class="breadcrumb-item active"><a href="{{ url_for('unit.detail', unit_id=unit.id) }}">{{ unit.name }}</a></li>
+            <li class="breadcrumb-item active">Nhập Bài Đọc</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card sakura-card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-file-import me-2"></i> Thêm hàng loạt Bài đọc</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info border-0 shadow-sm"
+                        style="border-radius: 12px; border-left: 5px solid #0dcaf0 !important;">
+                        <h6 class="fw-bold"><i class="fas fa-info-circle me-2"></i> Định dạng mẫu:</h6>
+                        <pre class="mb-0 mt-2 bg-white p-3 rounded shadow-sm border" style="font-size: 0.9rem;">
+Tiêu đề: Cuộc sống ở trạm vũ trụ như thế nào?
+Thuật ngữ:
+宇宙ステーションはどこにあるんですか。 ...
+Cách đọc:
+Uchū sutēshon wa doko ni aru n desu ka. ...
+Dịch:
+Trạm vũ trụ nằm ở đâu vậy?
+...
+
+Tiêu đề: Bài đọc tiếp theo
+...</pre>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" class="mt-4">
+                        <div class="mb-4">
+                            <label for="text_content" class="form-label fw-bold">Cách 1: Dán nội dung văn bản</label>
+                            <textarea class="form-control" id="text_content" name="text_content" rows="12"
+                                placeholder="Dán nội dung bài đọc với định dạng trên..."
+                                style="border-radius: 12px; resize: vertical; border: 2px solid #eee;"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="fileUpload" class="form-label fw-bold">Cách 2: Hoặc chọn tệp (.txt)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"
+                                    style="border-top-left-radius: 12px; border-bottom-left-radius: 12px; border: 2px solid #eee;">
+                                    <i class="fas fa-file-alt text-primary"></i>
+                                </span>
+                                <input class="form-control border-start-0" type="file" id="fileUpload" name="file"
+                                    accept=".txt"
+                                    style="border-top-right-radius: 12px; border-bottom-right-radius: 12px; border: 2px solid #eee;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-5">
+                            <a href="{{ url_for('unit.detail', unit_id=unit.id) }}"
+                                class="btn btn-light px-4 py-2 fw-bold" style="border-radius: 10px;">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold text-white shadow-sm"
+                                style="border-radius: 10px;">
+                                <i class="fas fa-cloud-upload-alt me-2"></i> Tiến hành Nhập
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        border-color: #4dabf7;
+        box-shadow: 0 0 0 0.25rem rgba(77, 171, 247, 0.25);
+    }
+</style>
+{% endblock %}

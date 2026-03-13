@@ -8,6 +8,8 @@ from app.services.flashcard_service import FlashcardService
 from app.services.sentence_service import SentenceService
 from app.services.test_service import TestService
 from app.services.grammar_service import GrammarService
+from app.services.reading_service import ReadingService
+
 
 __all__ = [
     "AuthService",
@@ -19,4 +21,6 @@ __all__ = [
     "SentenceService",
     "TestService",
     "GrammarService",
+    "ReadingService",
 ]
+
