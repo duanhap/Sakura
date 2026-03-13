@@ -192,58 +192,64 @@ class ReadingService:
                 ts_parts = ts_line.split('-->')
                 start_ms = time_to_ms(ts_parts[0])
                 end_ms = time_to_ms(ts_parts[1])
-                content = ' '.join(lines[ts_idx+1:]).strip()
-            except Exception:
+                
+                # The remaining lines after timestamp
+                remaining_lines = lines[ts_idx+1:]
+                
+                content = ""
+                pron = ""
+                trans = ""
+                
+                if len(remaining_lines) >= 3:
+                    # Case: Standard 3-line format (Content, Pron, Trans)
+                    content = remaining_lines[0]
+                    pron = remaining_lines[1]
+                    trans = remaining_lines[2]
+                elif len(remaining_lines) == 2:
+                    # Case: 2-line format (Content, Trans)
+                    content = remaining_lines[0]
+                    trans = remaining_lines[1]
+                elif len(remaining_lines) == 1:
+                    # Case: 1-line format
+                    content = remaining_lines[0]
+                
+                if not content:
+                    continue
+
+                # If pron or trans is empty, try automatic matching as fallback
+                if not pron or not trans:
+                    # Fuzzy matching normalization
+                    def norm(text):
+                        return re.sub(r'[、。！？\.\!\?\s]', '', text or "")
+
+                    norm_content = norm(content)
+                    
+                    # 1. Match with Reading's internal lines
+                    if not pron or not trans:
+                        for i, r_line in enumerate(reading_lines):
+                            if norm(r_line) == norm_content:
+                                if not pron and i < len(pron_lines): pron = pron_lines[i]
+                                if not trans and i < len(trans_lines): trans = trans_lines[i]
+                                break
+                    
+                    # 2. Match with sentences
+                    if not trans:
+                        for s in sentences:
+                            if norm(s.content) == norm_content:
+                                if not pron: pron = s.pronunciation
+                                trans = s.meaning
+                                break
+                    
+                    # 3. Match with flashcards
+                    if not trans:
+                        for f in flashcards:
+                            if norm(f.term) == norm_content:
+                                if not pron: pron = f.pronunciation
+                                trans = f.description
+                                break
+            except Exception as e:
+                print(f"Error parsing block: {e}")
                 continue
-            
-            if not content:
-                continue
-
-            # Fuzzy matching normalization
-            def norm(text):
-                return re.sub(r'[、。！？\.\!\?\s]', '', text or "")
-
-            norm_content = norm(content)
-            
-            pron = ""
-            trans = ""
-            
-            # 1. Match with Reading's internal lines
-            for i, r_line in enumerate(reading_lines):
-                if norm(r_line) == norm_content:
-                    if i < len(pron_lines): pron = pron_lines[i]
-                    if i < len(trans_lines): trans = trans_lines[i]
-                    break
-            
-            # 2. Match with sentences
-            if not trans:
-                for s in sentences:
-                    if norm(s.content) == norm_content:
-                        pron = s.pronunciation
-                        trans = s.meaning
-                        break
-            
-            # 3. Match with flashcards
-            if not trans:
-                for f in flashcards:
-                    if norm(f.term) == norm_content:
-                        pron = f.pronunciation
-                        trans = f.description
-                        break
- 
-            # 4. Partial matching
-            if not trans:
-                for s in sentences:
-                    s_norm = norm(s.content)
-                    if s_norm and (norm_content in s_norm or s_norm in norm_content):
-                        pron = s.pronunciation
-                        trans = s.meaning
-                        break
-
-            # Debug log
-            if not pron or not trans:
-                print(f"DEBUG: No match for '{content}' (norm: '{norm_content}')")
-                print(f"DEBUG: Reading lines checked: {len(reading_lines)}")
 
             sub = ReadingSubtitle(
                 ReadingId=reading_id,
@@ -257,8 +263,6 @@ class ReadingService:
             subs_added += 1
             
         db.session.commit()
-        print(f"DEBUG: Total subtitles added: {subs_added}")
-        return subs_added
 
 
 
