@@ -4,10 +4,11 @@ from app.models import Sentence, ResultUnitTest, Unit, Flashcard, Course
 
 class TestService:
     @staticmethod
-    def _segment_text(text, flash_terms):
+    def _segment_text(text, flash_terms, lang='ja'):
         """
         Phân tách văn bản thành các cụm từ dựa trên danh sách flashcard đã cho (greedy match).
-        Những phần không khớp sẽ được tách thành từng ký tự (trừ dấu câu/khoảng trắng).
+        Những phần không khớp sẽ được nhóm lại thành các cụm từ ngắn thay vì từng ký tự để dễ sắp xếp
+        và tránh gây mệt mỏi cho người dùng.
         """
         # Sắp xếp các cụm từ theo độ dài giảm dần để ưu tiên các từ dài nhất (greedy)
         sorted_terms = sorted(list(flash_terms), key=len, reverse=True)
@@ -15,9 +16,14 @@ class TestService:
         punctuation = '.,;!?。，！？、'
         result = []
         i = 0
+        
+        # Kiểm tra nếu là ngôn ngữ CJK (Trung, Nhật, Hàn)
+        lang_code = lang.lower() if lang else 'ja'
+        is_cjk = any(c in lang_code for c in ['ja', 'zh', 'ko'])
+        
         while i < len(text):
             char = text[i]
-            # Bỏ qua khoảng trắng hoặc dấu câu trong danh sách kết quả (theo logic cũ)
+            # Bỏ qua khoảng trắng hoặc dấu câu
             if not char.strip() or char in punctuation:
                 i += 1
                 continue
@@ -31,9 +37,44 @@ class TestService:
                     break
             
             if not found:
-                # Nếu không khớp cụm từ nào, lấy từng ký tự (không phải dấu câu đã lọc ở trên)
-                result.append(text[i])
-                i += 1
+                if not is_cjk:
+                    # Đối với ngôn ngữ có dấu cách (en, vi...), lấy toàn bộ từ tiếp theo
+                    j = i
+                    while j < len(text) and text[j].strip() and text[j] not in punctuation:
+                        # Kiểm tra xem có flashcard nào bắt đầu giữa chừng ko
+                        inner_found = False
+                        for term in sorted_terms:
+                            if text.startswith(term, j):
+                                inner_found = True
+                                break
+                        if inner_found: break
+                        j += 1
+                    segment = text[i:j]
+                    if segment:
+                        result.append(segment)
+                    i = j
+                else:
+                    # Đối với tiếng Nhật/Trung, nhóm các ký tự lại (tối đa 3-4 ký tự)
+                    # Điều này giúp giảm số lượng block cần sắp xếp
+                    start = i
+                    j = i + 1
+                    # Nhóm tối đa 3-4 ký tự hoặc cho đến khi gặp flashcard/dấu câu
+                    while j < len(text) and j < i + 4:
+                        if not text[j].strip() or text[j] in punctuation:
+                            break
+                        
+                        # Kiểm tra nếu có flashcard bắt đầu từ vị trí j
+                        inner_found = False
+                        for term in sorted_terms:
+                            if text.startswith(term, j):
+                                inner_found = True
+                                break
+                        if inner_found:
+                            break
+                        j += 1
+                    
+                    result.append(text[i:j])
+                    i = j
                 
         return result
 
@@ -60,7 +101,7 @@ class TestService:
         segmented_sentences_map = {} # sentence_id -> tokens
 
         for s in sentences:
-            tokens = TestService._segment_text(s.content, flash_terms)
+            tokens = TestService._segment_text(s.content, flash_terms, current_lang)
             segmented_sentences_map[s.id] = tokens
             for token in tokens:
                 all_tokens.add(token)
