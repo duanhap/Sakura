@@ -208,3 +208,34 @@ class FlashcardService:
             
         db.session.commit()
         return {"success": True}
+
+    @staticmethod
+    def get_flashcards_by_course(course_id, user_id=None):
+        """Get all flashcards for a course, optionally with user status."""
+        from app.models import Unit
+        flashcards = Flashcard.query.join(Unit).filter(Unit.Courseid == course_id).all()
+        
+        if not user_id:
+            return [{
+                "id": f.id,
+                "term": f.term,
+                "pronunciation": f.pronunciation,
+                "description": f.description,
+                "memoryTip": f.memoryTip,
+                "status": "CHUA_THUOC",
+                "unit_name": f.unit.name
+            } for f in flashcards]
+            
+        # Fetch statuses for this user
+        statuses = FlashcardUser.query.filter(FlashcardUser.UserId == user_id).all()
+        status_map = {s.FlashcardId: s.status for s in statuses}
+        
+        return [{
+            "id": f.id,
+            "term": f.term,
+            "pronunciation": f.pronunciation,
+            "description": f.description,
+            "memoryTip": f.memoryTip,
+            "status": status_map.get(f.id, "CHUA_THUOC"),
+            "unit_name": f.unit.name
+        } for f in flashcards]

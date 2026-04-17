@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Tổng hợp Flashcards: {{ course.name }} | Sakura{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        overflow-x: hidden;
+    }
+
+    .flip-card {
+        perspective: 1000px;
+        height: 400px;
+        width: 100%;
+        cursor: grab;
+        user-select: none;
+    }
+
+    .flip-card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        transition: transform 0.6s;
+        transform-style: preserve-3d;
+    }
+
+    .flip-card.flipped .flip-card-inner {
+        transform: rotateX(-180deg);
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        background: white;
+        padding: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .flip-card-front {
+        background: linear-gradient(135deg, #fff 0%, #fff0f6 100%);
+    }
+
+    .flip-card-back {
+        transform: rotateX(-180deg);
+        background: #f8f9fa;
+        overflow-y: auto;
+        justify-content: flex-start;
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    .btn-sound {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: #e83e8c;
+        z-index: 10;
+        transition: transform 0.2s;
+    }
+
+    .btn-action {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+    }
+
+    .term-text {
+        font-size: 5rem;
+        font-weight: 800;
+        color: #343a40;
+    }
+</style>
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('course.list') }}">Khóa học</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('course.detail', course_id=course.id) }}">{{ course.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tổng hợp Flashcards</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0 text-pink">Flashcards Course: {{ course.name }}</h3>
+        <div class="d-flex align-items-center gap-4">
+            <span class="fw-bold fs-5 text-secondary" id="progressCount">0/0</span>
+            <button id="btnShuffle" class="btn btn-outline-primary px-3" onclick="toggleRandom()">
+                🔀 Trộn thẻ
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="flashcardContainer" class="col-md-8 col-lg-6 mx-auto position-relative mt-5">
+    <div class="flip-card mb-4" id="flashcardBox">
+        <div class="flip-card-inner">
+            <div class="flip-card-front">
+                <button class="btn-sound" onclick="playSound(event)" title="Phát âm">🔊</button>
+                <div class="term-text" id="fcTerm"></div>
+                <div class="mt-2 text-muted small" id="fcUnitName" style="font-weight: 500;"></div>
+                <div class="mt-4 text-muted border px-3 py-1 rounded-pill bg-white">Nhấn để lật thẻ</div>
+            </div>
+            <div class="flip-card-back p-4 p-md-5">
+                <h1 class="text-pink fw-bold mb-1" id="fcTermBack"></h1>
+                <h4 class="text-secondary mb-4" id="fcPronunciation"></h4>
+                <h5 class="fw-bold text-dark">Mô tả & Ví dụ:</h5>
+                <p id="fcDescription" style="white-space: pre-wrap; font-size: 1.15rem; color: #444; line-height: 1.6;"></p>
+                <div id="fcMemoryTipWrapper" style="display: none;" class="mt-4 p-3 bg-light rounded border-start border-4 border-info">
+                    <h6 class="fw-bold text-info mb-2">💡 Mẹo cách nhớ:</h6>
+                    <p id="fcMemoryTip" style="font-style: italic; margin-bottom: 0;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 gap-md-4 mt-5">
+        <button class="btn btn-light btn-action text-secondary" onclick="prevCard()" title="Quay lại thẻ trước">
+            <span>⬅️</span>
+        </button>
+        <button class="btn btn-pink btn-action" onclick="nextCard()" title="Thẻ tiếp theo">
+            <span>➡️</span>
+        </button>
+    </div>
+
+    <div class="text-center mt-4 text-muted small">
+        Phím tắt: [Trái/Phải] Chuyển thẻ &middot; [Cách/Lên] Lật thẻ &middot; [ S ] Phát âm &middot; [ R ] Trộn thẻ
+    </div>
+</div>
+
+<div id="emptyState" class="col-md-8 mx-auto text-center py-5 mt-5" style="display: none;">
+    <div style="font-size: 5rem; margin-bottom: 1rem;">📭</div>
+    <h3 class="text-muted fw-bold">Khóa học này chưa có từ vựng nào</h3>
+    <a href="{{ url_for('course.detail', course_id=course.id) }}" class="btn btn-pink mt-3">Quay về khóa học</a>
+</div>
+
+<script>
+    const allFlashcards = {{ flashcards | tojson | safe }};
+    const courseLang = "{{ course.languageCourse | default('zh') }}";
+    
+    const langMap = { 'en': 'en-US', 'vi': 'vi-VN', 'zh': 'zh-CN', 'ja': 'ja-JP' };
+    const speechLang = langMap[courseLang] || 'zh-CN';
+
+    let currentCards = [...allFlashcards];
+    let currentIndex = 0;
+    let isRandom = false;
+
+    const cardBox = document.getElementById('flashcardBox');
+    let isAnimating = false;
+
+    function renderCurrentCard() {
+        const emptyState = document.getElementById('emptyState');
+        const container = document.getElementById('flashcardContainer');
+
+        document.getElementById('progressCount').innerText = currentCards.length > 0 ? `${currentIndex + 1}/${currentCards.length}` : `0/0`;
+
+        if (currentCards.length === 0) {
+            container.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        container.style.display = 'block';
+        emptyState.style.display = 'none';
+
+        cardBox.classList.remove('flipped');
+        
+        const c = currentCards[currentIndex];
+        document.getElementById('fcTerm').innerText = c.term || '';
+        document.getElementById('fcTermBack').innerText = c.term || '';
+        document.getElementById('fcUnitName').innerText = "Bài: " + (c.unit_name || '');
+        document.getElementById('fcPronunciation').innerText = c.pronunciation || '';
+        document.getElementById('fcDescription').innerText = c.description || '';
+
+        if (c.memoryTip) {
+            document.getElementById('fcMemoryTipWrapper').style.display = 'block';
+            document.getElementById('fcMemoryTip').innerText = c.memoryTip;
+        } else {
+            document.getElementById('fcMemoryTipWrapper').style.display = 'none';
+        }
+    }
+
+    function toggleCard() {
+        cardBox.classList.toggle('flipped');
+    }
+
+    function nextCard() {
+        if (currentIndex < currentCards.length - 1) currentIndex++;
+        else currentIndex = 0;
+        renderCurrentCard();
+    }
+
+    function prevCard() {
+        if (currentIndex > 0) currentIndex--;
+        else currentIndex = currentCards.length - 1;
+        renderCurrentCard();
+    }
+
+    function playSound(e) {
+        if (e) e.stopPropagation();
+        if (currentCards.length === 0) return;
+        const term = currentCards[currentIndex].term;
+        const utterance = new SpeechSynthesisUtterance(term);
+        utterance.lang = speechLang;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function toggleRandom() {
+        isRandom = !isRandom;
+        const btn = document.getElementById('btnShuffle');
+        if (isRandom) {
+            btn.classList.replace('btn-outline-primary', 'btn-primary');
+            shuffle(currentCards);
+        } else {
+            btn.classList.replace('btn-primary', 'btn-outline-primary');
+            currentCards = [...allFlashcards];
+        }
+        currentIndex = 0;
+        renderCurrentCard();
+    }
+
+    // Click to flip
+    cardBox.addEventListener('click', toggleCard);
+
+    renderCurrentCard();
+
+    // Keybindings
+    document.addEventListener('keydown', function (event) {
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+        if (currentCards.length === 0) return;
+
+        if (event.code === 'Space' || event.code === 'ArrowUp' || event.code === 'ArrowDown') {
+            event.preventDefault();
+            toggleCard();
+        } else if (event.code === 'ArrowRight') {
+            nextCard();
+        } else if (event.code === 'ArrowLeft') {
+            prevCard();
+        } else if (event.code === 'KeyS') {
+            playSound();
+        } else if (event.code === 'KeyR') {
+            toggleRandom();
+        }
+    });
+</script>
+{% endblock %}

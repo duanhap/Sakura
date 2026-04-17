@@ -14,6 +14,57 @@
         <p class="card-text">{{ course.description }}</p>
       </div>
     </div>
+
+    <!-- Course Tools -->
+    <div class="mt-4">
+      <h5 class="text-pink mb-3 fw-bold">Công cụ học tập</h5>
+      <div class="d-flex flex-column gap-3">
+        <a href="{{ url_for('course.flashcards', course_id=course.id) }}" class="text-decoration-none">
+          <div class="sakura-card p-3 tool-card d-flex align-items-center gap-3">
+            <div class="tool-icon">📚</div>
+            <div>
+              <h6 class="mb-1 text-pink fw-bold">Tổng hợp Flashcards</h6>
+              <p class="mb-0 text-muted small">Ôn tập toàn bộ từ vựng trong khóa học</p>
+            </div>
+          </div>
+        </a>
+
+        <a href="{{ url_for('course.matching_game', course_id=course.id) }}" class="text-decoration-none">
+          <div class="sakura-card p-3 tool-card d-flex align-items-center gap-3">
+            <div class="tool-icon">🎮</div>
+            <div>
+              <h6 class="mb-1 text-pink fw-bold">Game ghép từ</h6>
+              <p class="mb-0 text-muted small">Thử thách trí nhớ với trò chơi ghép cặp</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    <!-- End Course Tools -->
+
+    <style>
+      .tool-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+        cursor: pointer;
+      }
+      .tool-card:hover {
+        transform: translateY(-5px);
+        border-color: #ffc1e3;
+        background: linear-gradient(135deg, #fff 0%, #fff0f6 100%);
+        box-shadow: 0 10px 20px rgba(255, 192, 203, 0.2);
+      }
+      .tool-icon {
+        font-size: 2rem;
+        background: #fff0f6;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+      }
+    </style>
   </div>
   <div class="col-md-8">
     <h4 class="mb-3 text-pink">Danh sách bài học</h4>
